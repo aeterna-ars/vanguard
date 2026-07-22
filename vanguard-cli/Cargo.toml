@@ -1,0 +1,14 @@
+[package]
+name = "vanguard-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aya = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+libc = { workspace = true }
+vanguard-grpc = { path = "../vanguard-grpc" }
+vanguard-common = { path = "../vanguard-common" }
+
+[features]
+default = []

@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package vanguard_api;
+
+import "google/protobuf/empty.proto";
+
+service Vanguard {
+  rpc ChangeRateLimit (ChangeRateLimitRequest) returns (google.protobuf.Empty);
+  rpc ChangeBlockTime (ChangeBlockTimeRequest) returns (google.protobuf.Empty);
+  rpc Block (BlockRequest) returns (google.protobuf.Empty);
+  rpc White (WhiteRequest) returns (google.protobuf.Empty);
+  rpc AddRule (AddRuleRequest) returns (google.protobuf.Empty);
+  rpc DelRule (DelRuleRequest) returns (google.protobuf.Empty);
+  rpc GetStats (GetStatsRequest) returns (GetStatsResponse);
+}
+
+message ChangeRateLimitRequest {
+  uint32 limit = 1;
+}
+
+message ChangeBlockTimeRequest {
+  uint64 time = 1;
+}
+
+message BlockRequest {
+  string ip = 1;
+  uint64 block_until = 2;
+}
+
+message WhiteRequest {
+  string ip = 1;
+}
+
+message Rule {
+  RuleKey key = 1;
+  RuleValue value = 2;
+}
+
+message RuleKey {
+  string ip = 1;
+  uint32 port = 2;
+  string eth = 3;
+  string proto = 4;
+}
+
+message RuleValue {
+  uint32 action = 1;
+  RuleKey redirect_to = 2;
+}
+
+message AddRuleRequest {
+  Rule rule = 1;
+}
+
+message DelRuleRequest {
+  RuleKey key = 1;
+}
+
+message GetStatsRequest {}
+
+message GetStatsResponse {
+  uint64 total = 1;
+  uint64 dropped = 2;
+  uint64 passed = 3;
+  uint64 tx = 4;
+  uint64 redirected = 5;
+}

@@ -1,0 +1,16 @@
+[package]
+name = "vanguard-xdp"
+version.workspace = true
+edition.workspace = true
+autotests = false
+doctest = false
+bench = false
+
+[dependencies]
+aya-ebpf = { workspace = true }
+aya-log-ebpf = { workspace = true }
+network-types = { workspace = true }
+vanguard-common = { path = "../vanguard-common" }
+
+[features]
+default = []

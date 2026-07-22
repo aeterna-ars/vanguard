@@ -1,0 +1,16 @@
+[package]
+name = "vanguard-common"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aya = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = { workspace = true }
+network-types = { workspace = true }
+erret-macro = { workspace = true }
+erret-result = { workspace = true }
+
+[features]
+default = []
