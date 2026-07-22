@@ -11,6 +11,7 @@ serde_yaml = { workspace = true }
 network-types = { workspace = true }
 erret-macro = { workspace = true }
 erret-result = { workspace = true }
+brevno = { workspace = true }
 
 [features]
 default = []

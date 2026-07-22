@@ -1,0 +1,522 @@
+warning: vanguard-xdp/Cargo.toml: unused manifest key: package.bench
+warning: vanguard-xdp/Cargo.toml: unused manifest key: package.doctest
+warning: `vanguard-xdp` (manifest) generated 2 warnings
+   0.113178981s  INFO prepare_target{force=false package_id=vanguard-daemon v0.1.0 (/home/user/projects/projects/vanguard/vanguard-daemon) target="vanguard-daemon"}: cargo::core::compiler::fingerprint: fingerprint error for vanguard-daemon v0.1.0 (/home/user/projects/projects/vanguard/vanguard-daemon)/Check { test: false }/TargetInner { name: "vanguard-daemon", doc: true, ..: with_path("/home/user/projects/projects/vanguard/vanguard-daemon/src/main.rs", Edition2024) }
+   0.113203508s  INFO prepare_target{force=false package_id=vanguard-daemon v0.1.0 (/home/user/projects/projects/vanguard/vanguard-daemon) target="vanguard-daemon"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/user/projects/projects/vanguard/target/debug/.fingerprint/vanguard-daemon-a3960b82eb3718c0/bin-vanguard-daemon`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: cargo_util::paths::read_bytes
+   1: cargo_util::paths::read
+   2: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   3: cargo::core::compiler::fingerprint::prepare_target
+   4: cargo::core::compiler::compile
+   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   6: cargo::ops::cargo_compile::compile_with_exec
+   7: cargo::ops::cargo_compile::compile
+   8: cargo::commands::check::exec
+   9: <cargo::cli::Exec>::exec
+  10: cargo::main
+  11: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  12: std::rt::lang_start::<()>::{closure#0}
+  13: <&dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/core/src/ops/function.rs:287:21
+  14: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe, i32>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:576:43
+  15: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:544:19
+  16: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe, i32>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panic.rs:359:14
+  17: std::rt::lang_start_internal::{closure#0}
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/rt.rs:175:24
+  18: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:576:43
+  19: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:544:19
+  20: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panic.rs:359:14
+  21: std::rt::lang_start_internal
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/rt.rs:171:5
+  22: main
+  23: <unknown>
+  24: __libc_start_main
+  25: <unknown>
+   0.138372223s  INFO prepare_target{force=false package_id=vanguard-daemon v0.1.0 (/home/user/projects/projects/vanguard/vanguard-daemon) target="vanguard-daemon"}: cargo::core::compiler::fingerprint: fingerprint error for vanguard-daemon v0.1.0 (/home/user/projects/projects/vanguard/vanguard-daemon)/Check { test: true }/TargetInner { name: "vanguard-daemon", doc: true, ..: with_path("/home/user/projects/projects/vanguard/vanguard-daemon/src/main.rs", Edition2024) }
+   0.138391379s  INFO prepare_target{force=false package_id=vanguard-daemon v0.1.0 (/home/user/projects/projects/vanguard/vanguard-daemon) target="vanguard-daemon"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/user/projects/projects/vanguard/target/debug/.fingerprint/vanguard-daemon-6d225e5484833da9/test-bin-vanguard-daemon`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: cargo_util::paths::read_bytes
+   1: cargo_util::paths::read
+   2: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   3: cargo::core::compiler::fingerprint::prepare_target
+   4: cargo::core::compiler::compile
+   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   6: cargo::ops::cargo_compile::compile_with_exec
+   7: cargo::ops::cargo_compile::compile
+   8: cargo::commands::check::exec
+   9: <cargo::cli::Exec>::exec
+  10: cargo::main
+  11: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  12: std::rt::lang_start::<()>::{closure#0}
+  13: <&dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/core/src/ops/function.rs:287:21
+  14: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe, i32>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:576:43
+  15: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:544:19
+  16: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::marker::Sync + core::panic::unwind_safe::RefUnwindSafe, i32>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panic.rs:359:14
+  17: std::rt::lang_start_internal::{closure#0}
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/rt.rs:175:24
+  18: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:576:43
+  19: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panicking.rs:544:19
+  20: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/panic.rs:359:14
+  21: std::rt::lang_start_internal
+             at /rustc/14cae681329a63c622a6e1fbe1d30f9374bc51d8/library/std/src/rt.rs:171:5
+  22: main
+  23: <unknown>
+  24: __libc_start_main
+  25: <unknown>
+[/home/user/projects/libs/erret/erret-macro/src/lib.rs:31:5] &item = TokenStream [
+    Ident {
+        ident: "pub",
+        span: #0 bytes(21584..21587),
+    },
+    Ident {
+        ident: "enum",
+        span: #0 bytes(21588..21592),
+    },
+    Ident {
+        ident: "VanguardError",
+        span: #0 bytes(21593..21606),
+    },
+    Group {
+        delimiter: Brace,
+        stream: TokenStream [
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21613..21614),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21615..21620),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Cli error: {}",
+                                suffix: None,
+                                span: #0 bytes(21621..21636),
+                            },
+                        ],
+                        span: #0 bytes(21620..21637),
+                    },
+                ],
+                span: #0 bytes(21614..21638),
+            },
+            Ident {
+                ident: "Cli",
+                span: #0 bytes(21643..21646),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21647..21648),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21648..21655),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21648..21655),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21656..21659),
+                    },
+                ],
+                span: #0 bytes(21646..21660),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21660..21661),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21667..21668),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21669..21674),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "eBPF error: {}",
+                                suffix: None,
+                                span: #0 bytes(21675..21691),
+                            },
+                        ],
+                        span: #0 bytes(21674..21692),
+                    },
+                ],
+                span: #0 bytes(21668..21693),
+            },
+            Ident {
+                ident: "EbpfMap",
+                span: #0 bytes(21698..21705),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Ident {
+                        ident: "String",
+                        span: #0 bytes(21706..21712),
+                    },
+                ],
+                span: #0 bytes(21705..21713),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21713..21714),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21720..21721),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21722..21727),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Ebpf error: {}",
+                                suffix: None,
+                                span: #0 bytes(21728..21744),
+                            },
+                        ],
+                        span: #0 bytes(21727..21745),
+                    },
+                ],
+                span: #0 bytes(21721..21746),
+            },
+            Ident {
+                ident: "Ebpf",
+                span: #0 bytes(21751..21755),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21756..21757),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21757..21764),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21757..21764),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21765..21768),
+                    },
+                ],
+                span: #0 bytes(21755..21769),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21769..21770),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21776..21777),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21778..21783),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "IO error: {}",
+                                suffix: None,
+                                span: #0 bytes(21784..21798),
+                            },
+                        ],
+                        span: #0 bytes(21783..21799),
+                    },
+                ],
+                span: #0 bytes(21777..21800),
+            },
+            Ident {
+                ident: "Io",
+                span: #0 bytes(21805..21807),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21808..21809),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21809..21816),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21809..21816),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21817..21820),
+                    },
+                ],
+                span: #0 bytes(21807..21821),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21821..21822),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21828..21829),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21830..21835),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Serde error: {}",
+                                suffix: None,
+                                span: #0 bytes(21836..21853),
+                            },
+                        ],
+                        span: #0 bytes(21835..21854),
+                    },
+                ],
+                span: #0 bytes(21829..21855),
+            },
+            Ident {
+                ident: "Grpc",
+                span: #0 bytes(21860..21864),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21865..21866),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21866..21873),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21866..21873),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21874..21877),
+                    },
+                ],
+                span: #0 bytes(21864..21878),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21878..21879),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21885..21886),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21887..21892),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Daemon error: {}",
+                                suffix: None,
+                                span: #0 bytes(21893..21911),
+                            },
+                        ],
+                        span: #0 bytes(21892..21912),
+                    },
+                ],
+                span: #0 bytes(21886..21913),
+            },
+            Ident {
+                ident: "Daemon",
+                span: #0 bytes(21918..21924),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Ident {
+                        ident: "String",
+                        span: #0 bytes(21925..21931),
+                    },
+                ],
+                span: #0 bytes(21924..21932),
+            },
+        ],
+        span: #0 bytes(21607..21934),
+    },
+]
+[/home/user/projects/libs/erret/erret-macro/src/lib.rs:36:5] &error = Enum {
+    is_pub: true,
+    name: "VanguardError",
+    vars: [
+        Var {
+            name: "Cli",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Cli error: {}",
+            ),
+        },
+        Var {
+            name: "EbpfMap",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "String",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "eBPF error: {}",
+            ),
+        },
+        Var {
+            name: "Ebpf",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Ebpf error: {}",
+            ),
+        },
+        Var {
+            name: "Io",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "IO error: {}",
+            ),
+        },
+        Var {
+            name: "Grpc",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Serde error: {}",
+            ),
+        },
+        Var {
+            name: "Daemon",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "String",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Daemon error: {}",
+            ),
+        },
+    ],
+}
+    Checking vanguard-daemon v0.1.0 (/home/user/projects/projects/vanguard/vanguard-daemon)
+error: could not compile `vanguard-daemon` (bin "vanguard-daemon" test) due to 25 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `vanguard-daemon` (bin "vanguard-daemon") due to 25 previous errors

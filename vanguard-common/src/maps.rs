@@ -16,6 +16,8 @@ use crate::error::VanguardError;
 
 use erret_result::*;
 
+use clap::*;
+
 #[repr(C)]
 #[derive(Clone, Copy, Deserialize)]
 pub struct Ip(pub u128);

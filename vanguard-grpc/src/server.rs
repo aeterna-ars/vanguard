@@ -1,6 +1,5 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use brevno::init_global_logger;
 use tokio::sync::Mutex;
 
 use aya::Ebpf;
@@ -9,9 +8,16 @@ use tonic::{transport::Server, Request, Response, Status};
 
 use crate::vanguard_api::{self, vanguard_server::*, *};
 
-use vanguard_common::{ErrResult, maps::{self, GlobalStats, RuleAction}, parse::*};
-
-use brevno::*;
+use vanguard_common::{
+    erret_result::*,
+    maps::{
+        self,
+        GlobalStats,
+        RuleAction
+    },
+    parse::*,
+    brevno::*,
+};
 
 struct VanguardService {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -222,4 +228,4 @@ pub async fn start_grpc_server(bpf: aya::Ebpf, addr: SocketAddr) -> ErrResult<()
     Ok(())
 }
 
-init_global_logger!(1024, 1024, brevno::log::LogLevel::Info);
+init_global_logger!(1024, 1024, log::LogLevel::Info);

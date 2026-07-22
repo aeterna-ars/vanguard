@@ -11,7 +11,13 @@ use libsystemd::daemon::{self, *};
 
 use tokio::signal::unix::*;
 
-use vanguard_common::{config::{GrpcApi, VanguardConfig}, error::VanguardError, maps, *};
+use vanguard_common::{
+    config::{GrpcApi, VanguardConfig},
+    error::VanguardError,
+    maps,
+    brevno::*,
+    erret_result::*,
+};
 
 use vanguard_grpc::server::start_grpc_server;
 
@@ -21,8 +27,8 @@ struct XdpDaemon {
 }
 
 impl XdpDaemon {
-    fn load(config: VanguardConfig) -> ErrResult<Self> {
-        println!("Starting daemon...");
+    fn load() -> ErrResult<Self> {
+        info!("Starting daemon...");
 
         Self::notify()?;
 
@@ -40,10 +46,12 @@ impl XdpDaemon {
         })
     }
 
-    fn init_logger(mut self) -> ErrResult<()> {
+    async fn init_logger(&mut self) -> ErrResult<()> {
+        let mut bpf = self.bpf.lock().await;
+
         env_logger::init();
 
-        match EbpfLogger::init(&mut self.bpf) {
+        match EbpfLogger::init(&mut bpf) {
             Err(e) => {
                 info!("Failed to init logger: {}", e);
             }
@@ -65,8 +73,9 @@ impl XdpDaemon {
         Ok(())
     }
 
-    fn cleanup(mut self) -> ErrResult<()> {
-        let program: &mut Xdp = self.bpf.program_mut("core").unwrap().try_into()?;
+    async fn cleanup(self) -> ErrResult<()> {
+        let mut bpf = self.bpf.lock().await;
+        let program: &mut Xdp = bpf.program_mut("core").unwrap().try_into()?;
 
         program.detach(self.link_id)
             .map_err(|_| VanguardError::Ebpf("failed to detach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
@@ -76,23 +85,25 @@ impl XdpDaemon {
         Ok(())
     }
 
-    fn apply_cfg(mut self, config: VanguardConfig) -> ErrResult<()> {
-        maps::ConfigMap::write(&mut self.bpf, config.config)?;
+    async fn apply_cfg(&mut self, config: VanguardConfig) -> ErrResult<()> {
+        let mut bpf = self.bpf.lock().await;
+
+        maps::ConfigMap::write(&mut bpf, config.config)?;
 
         for ip in config.blacklist {
-            maps::BlocklistMap::block(&mut self.bpf, ip.ip.0, ip.blocked_until)?;
+            maps::BlocklistMap::block(&mut bpf, ip.ip.0, ip.blocked_until)?;
         }
 
         for ip in config.whitelist {
-            maps::WhitelistMap::insert(&mut self.bpf, ip.0)?;
+            maps::WhitelistMap::insert(&mut bpf, ip.0)?;
         }
 
         for rule in config.rules {
-            maps::RulesMap::add(&mut self.bpf, rule.key, rule.value)?;
+            maps::RulesMap::add(&mut bpf, rule.key, rule.value)?;
         }
 
         if config.grpc.up {
-            Self::grpc(&mut self.bpf, config.grpc)?;
+            Self::grpc(&mut bpf, config.grpc).await?;
         }
 
         Ok(())
@@ -101,12 +112,12 @@ impl XdpDaemon {
     fn notify() -> ErrResult<()> {
         if daemon::booted() {
             if let Err(e) = daemon::notify(false, &[NotifyState::Ready]) {
-                eprintln!("Failed to notify systemd: {}", e);
+                error!("Failed to notify systemd: {}", e);
             } else {
-                println!("Systemd notified: READY=1");
+                info!("Systemd notified: READY=1");
             }
         } else {
-            println!("Not running under systemd");
+            info!("Not running under systemd");
         }
 
         Ok(())
@@ -115,7 +126,7 @@ impl XdpDaemon {
     async fn pidoras(self) -> ErrResult<()> {
         let pid = std::process::id();
         std::fs::write("/tmp/vanguard.pid", pid.to_string())?;
-        println!("PID file created: {}", pid);
+        info!("PID file created: {}", pid);
 
         let mut sigterm = signal(SignalKind::terminate())?;
         let mut sighup = signal(SignalKind::hangup())?;
@@ -123,28 +134,28 @@ impl XdpDaemon {
         loop {
             tokio::select! {
                 _ = sigterm.recv() => {
-                    println!("Shutting down...");
+                    info!("Shutting down...");
                     break;
                 }
                 _ = sighup.recv() => {
-                    println!("Reloading config...");
+                    info!("Reloading config...");
                     if let Ok(new_config) = VanguardConfig::load("config.yaml") {
-                        self.apply_cfg(new_config)?;
-                        println!("Config reloaded");
+                        self.apply_cfg(new_config).await?;
+                        info!("Config reloaded");
                     } else {
-                        eprintln!("Failed to reload config");
+                        error!("Failed to reload config");
                     }
                 }
             }
         }
 
         std::fs::remove_file("/tmp/vanguard.pid").ok();
-        println!("Daemon stopped");
+        info!("Daemon stopped");
 
         Ok(())
     }
 
-    fn grpc(bpf: &mut Ebpf, grpc: GrpcApi) -> ErrResult<()> {
+    async fn grpc(bpf: &mut Ebpf, grpc: GrpcApi) -> ErrResult<()> {
         let default_addr = "[::1]:8080".parse()?;
         tokio::spawn(async move {
             start_grpc_server(*bpf, default_addr).await?;
@@ -162,9 +173,9 @@ impl XdpDaemon {
 
 #[tokio::main]
 async fn main() -> ErrResult<()> {
-    let daemon = XdpDaemon::load()?;
-    daemon.init_logger()?;
-    daemon.pidoras().await?;
+    let mut daemon = XdpDaemon::load()?;
+    &daemon.init_logger().await?;
+    &daemon.pidoras().await?;
 
     Ok(())
 }

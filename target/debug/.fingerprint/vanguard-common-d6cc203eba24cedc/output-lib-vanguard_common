@@ -1,0 +1,433 @@
+[/home/user/projects/libs/erret/erret-macro/src/lib.rs:31:5] &item = TokenStream [
+    Ident {
+        ident: "pub",
+        span: #0 bytes(21571..21574),
+    },
+    Ident {
+        ident: "enum",
+        span: #0 bytes(21575..21579),
+    },
+    Ident {
+        ident: "VanguardError",
+        span: #0 bytes(21580..21593),
+    },
+    Group {
+        delimiter: Brace,
+        stream: TokenStream [
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21600..21601),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21602..21607),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Cli error: {}",
+                                suffix: None,
+                                span: #0 bytes(21608..21623),
+                            },
+                        ],
+                        span: #0 bytes(21607..21624),
+                    },
+                ],
+                span: #0 bytes(21601..21625),
+            },
+            Ident {
+                ident: "Cli",
+                span: #0 bytes(21630..21633),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21634..21635),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21635..21642),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21635..21642),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21643..21646),
+                    },
+                ],
+                span: #0 bytes(21633..21647),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21647..21648),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21654..21655),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21656..21661),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "eBPF error: {}",
+                                suffix: None,
+                                span: #0 bytes(21662..21678),
+                            },
+                        ],
+                        span: #0 bytes(21661..21679),
+                    },
+                ],
+                span: #0 bytes(21655..21680),
+            },
+            Ident {
+                ident: "EbpfMap",
+                span: #0 bytes(21685..21692),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Ident {
+                        ident: "String",
+                        span: #0 bytes(21693..21699),
+                    },
+                ],
+                span: #0 bytes(21692..21700),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21700..21701),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21707..21708),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21709..21714),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Ebpf error: {}",
+                                suffix: None,
+                                span: #0 bytes(21715..21731),
+                            },
+                        ],
+                        span: #0 bytes(21714..21732),
+                    },
+                ],
+                span: #0 bytes(21708..21733),
+            },
+            Ident {
+                ident: "Ebpf",
+                span: #0 bytes(21738..21742),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21743..21744),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21744..21751),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21744..21751),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21752..21755),
+                    },
+                ],
+                span: #0 bytes(21742..21756),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21756..21757),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21763..21764),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21765..21770),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "IO error: {}",
+                                suffix: None,
+                                span: #0 bytes(21771..21785),
+                            },
+                        ],
+                        span: #0 bytes(21770..21786),
+                    },
+                ],
+                span: #0 bytes(21764..21787),
+            },
+            Ident {
+                ident: "Io",
+                span: #0 bytes(21792..21794),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21795..21796),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21796..21803),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21796..21803),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21804..21807),
+                    },
+                ],
+                span: #0 bytes(21794..21808),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21808..21809),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21815..21816),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21817..21822),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Serde error: {}",
+                                suffix: None,
+                                span: #0 bytes(21823..21840),
+                            },
+                        ],
+                        span: #0 bytes(21822..21841),
+                    },
+                ],
+                span: #0 bytes(21816..21842),
+            },
+            Ident {
+                ident: "Grpc",
+                span: #0 bytes(21847..21851),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Punct {
+                        ch: '&',
+                        spacing: Alone,
+                        span: #0 bytes(21852..21853),
+                    },
+                    Punct {
+                        ch: '\'',
+                        spacing: Joint,
+                        span: #0 bytes(21853..21860),
+                    },
+                    Ident {
+                        ident: "static",
+                        span: #0 bytes(21853..21860),
+                    },
+                    Ident {
+                        ident: "str",
+                        span: #0 bytes(21861..21864),
+                    },
+                ],
+                span: #0 bytes(21851..21865),
+            },
+            Punct {
+                ch: ',',
+                spacing: Alone,
+                span: #0 bytes(21865..21866),
+            },
+            Punct {
+                ch: '#',
+                spacing: Alone,
+                span: #0 bytes(21872..21873),
+            },
+            Group {
+                delimiter: Bracket,
+                stream: TokenStream [
+                    Ident {
+                        ident: "error",
+                        span: #0 bytes(21874..21879),
+                    },
+                    Group {
+                        delimiter: Parenthesis,
+                        stream: TokenStream [
+                            Literal {
+                                kind: Str,
+                                symbol: "Daemon error: {}",
+                                suffix: None,
+                                span: #0 bytes(21880..21898),
+                            },
+                        ],
+                        span: #0 bytes(21879..21899),
+                    },
+                ],
+                span: #0 bytes(21873..21900),
+            },
+            Ident {
+                ident: "Daemon",
+                span: #0 bytes(21905..21911),
+            },
+            Group {
+                delimiter: Parenthesis,
+                stream: TokenStream [
+                    Ident {
+                        ident: "String",
+                        span: #0 bytes(21912..21918),
+                    },
+                ],
+                span: #0 bytes(21911..21919),
+            },
+        ],
+        span: #0 bytes(21594..21921),
+    },
+]
+[/home/user/projects/libs/erret/erret-macro/src/lib.rs:36:5] &error = Enum {
+    is_pub: true,
+    name: "VanguardError",
+    vars: [
+        Var {
+            name: "Cli",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Cli error: {}",
+            ),
+        },
+        Var {
+            name: "EbpfMap",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "String",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "eBPF error: {}",
+            ),
+        },
+        Var {
+            name: "Ebpf",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Ebpf error: {}",
+            ),
+        },
+        Var {
+            name: "Io",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "IO error: {}",
+            ),
+        },
+        Var {
+            name: "Grpc",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "&'static str",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Serde error: {}",
+            ),
+        },
+        Var {
+            name: "Daemon",
+            fields: [
+                FieldInfo {
+                    name: None,
+                    ty: "String",
+                    has_from: false,
+                },
+            ],
+            error_arg: Some(
+                "Daemon error: {}",
+            ),
+        },
+    ],
+}
+{"$message_type":"diagnostic","message":"unused import: `clap::*`","code":{"code":"unused_imports","explanation":null},"level":"warning","spans":[{"file_name":"vanguard-common/src/maps.rs","byte_start":283,"byte_end":290,"line_start":19,"line_end":19,"column_start":5,"column_end":12,"is_primary":true,"text":[{"text":"use clap::*;","highlight_start":5,"highlight_end":12}],"label":null,"suggested_replacement":null,"suggestion_applicability":null,"expansion":null}],"children":[{"message":"`#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default","code":null,"level":"note","spans":[],"children":[],"rendered":null},{"message":"remove the whole `use` item","code":null,"level":"help","spans":[{"file_name":"vanguard-common/src/maps.rs","byte_start":279,"byte_end":292,"line_start":19,"line_end":20,"column_start":1,"column_end":1,"is_primary":true,"text":[{"text":"use clap::*;","highlight_start":1,"highlight_end":13},{"text":"","highlight_start":1,"highlight_end":1}],"label":null,"suggested_replacement":"","suggestion_applicability":"MachineApplicable","expansion":null}],"children":[],"rendered":null}],"rendered":"\u001b[1m\u001b[33mwarning\u001b[0m\u001b[1m: unused import: `clap::*`\u001b[0m\n  \u001b[1m\u001b[94m--> \u001b[0mvanguard-common/src/maps.rs:19:5\n   \u001b[1m\u001b[94m|\u001b[0m\n\u001b[1m\u001b[94m19\u001b[0m \u001b[1m\u001b[94m|\u001b[0m use clap::*;\n   \u001b[1m\u001b[94m|\u001b[0m     \u001b[1m\u001b[33m^^^^^^^\u001b[0m\n   \u001b[1m\u001b[94m|\u001b[0m\n   \u001b[1m\u001b[94m= \u001b[0m\u001b[1mnote\u001b[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\n"}
+{"$message_type":"diagnostic","message":"1 warning emitted","code":null,"level":"warning","spans":[],"children":[],"rendered":"\u001b[1m\u001b[33mwarning\u001b[0m\u001b[1m: 1 warning emitted\u001b[0m\n\n"}

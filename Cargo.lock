@@ -1770,6 +1770,7 @@ name = "vanguard-common"
 version = "0.1.0"
 dependencies = [
  "aya",
+ "brevno",
  "clap",
  "erret-macro",
  "erret-result",
@@ -1788,7 +1789,6 @@ dependencies = [
  "libc",
  "libsystemd",
  "tokio",
- "tonic-prost-build",
  "vanguard-common",
  "vanguard-grpc",
 ]
@@ -1798,7 +1798,6 @@ name = "vanguard-grpc"
 version = "0.1.0"
 dependencies = [
  "aya",
- "brevno",
  "env_logger",
  "network-types",
  "prost",

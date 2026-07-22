@@ -13,8 +13,5 @@ libc = { workspace = true }
 vanguard-common = { path = "../vanguard-common" }
 vanguard-grpc = { path = "../vanguard-grpc" }
 
-[build-dependencies]
-tonic-prost-build = "0.14.6"
-
 [features]
 default = []

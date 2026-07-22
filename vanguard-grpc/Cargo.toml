@@ -6,7 +6,6 @@ edition.workspace = true
 [dependencies]
 vanguard-common = { path = "../vanguard-common" }
 aya = { workspace = true }
-brevno = { workspace = true }
 env_logger = { workspace = true }
 tokio = { workspace = true }
 tonic = { workspace = true }
