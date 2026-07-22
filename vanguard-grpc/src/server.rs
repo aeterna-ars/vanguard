@@ -213,9 +213,9 @@ fn parse_rule_key(key: vanguard_api::RuleKey) -> Result<vanguard_common::maps::R
     })
 }
 
-pub async fn start_grpc_server(bpf: aya::Ebpf, addr: SocketAddr) -> ErrResult<()> {
+pub async fn start_grpc_server(bpf: Arc<Mutex<aya::Ebpf>>, addr: SocketAddr) -> ErrResult<()> {
     let service = VanguardService {
-        bpf: Arc::new(Mutex::new(bpf)),
+        bpf,
     };
 
     info!("gRPC server listening on {}", addr);

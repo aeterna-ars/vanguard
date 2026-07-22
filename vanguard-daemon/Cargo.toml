@@ -9,7 +9,6 @@ aya-log = { workspace = true }
 env_logger = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 libsystemd = { workspace = true }
-libc = { workspace = true }
 vanguard-common = { path = "../vanguard-common" }
 vanguard-grpc = { path = "../vanguard-grpc" }
 

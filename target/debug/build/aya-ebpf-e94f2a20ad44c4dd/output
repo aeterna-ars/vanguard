@@ -1,8 +1,0 @@
-cargo::rustc-check-cfg=cfg(generic_const_exprs)
-cargo::rustc-check-cfg=cfg(runtime_symbol_lint)
-cargo:rustc-cfg=runtime_symbol_lint
-cargo:rerun-if-env-changed=CARGO_CFG_BPF_TARGET_ARCH
-cargo:rerun-if-env-changed=AYA_BPF_TARGET_ARCH
-cargo:rerun-if-env-changed=HOST
-cargo:rustc-cfg=bpf_target_arch="x86_64"
-cargo::rustc-check-cfg=cfg(bpf_target_arch, values("aarch64","arm","loongarch64","mips","mips64","powerpc64","riscv64","s390x","x86_64",))

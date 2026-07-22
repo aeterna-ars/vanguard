@@ -150,41 +150,49 @@ impl WhitelistMap {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Deserialize, Args)]
 pub struct Rule {
+    #[command(flatten)]
     pub key: RuleKey,
+
+    #[command(flatten)]
     pub value: RuleValue,
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Deserialize, Args)]
 pub struct RuleKey {
     #[serde(deserialize_with = "deserialize_ip")]
     pub ip: Ip,
 
+    #[arg(short, long)]
     pub port: u16,
 
     #[serde(deserialize_with = "deserialize_eth")]
+    #[arg(short, long)]
     pub eth: EtherType,
 
     #[serde(deserialize_with = "deserialize_proto")]
+    #[arg(short, long)]
     pub proto: IpProto,
 }
 unsafe impl Pod for RuleKey {}
 
 #[repr(C)]
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Deserialize, Args)]
 pub struct RuleValue {
     #[serde(deserialize_with = "deserialize_action")]
+    #[arg(short, long)]
     pub action: RuleAction,
 
     #[serde(default)]
+    #[arg(short, long)]
     pub to: Option<RuleKey>,
 }
 unsafe impl Pod for RuleValue {}
 
 #[repr(u32)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Subcommand)]
 pub enum RuleAction {
     ABORTED = 0,
     DROP = 1,

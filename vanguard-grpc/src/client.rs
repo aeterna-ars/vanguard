@@ -2,7 +2,11 @@ use std::net::SocketAddr;
 
 use tonic::transport::Channel;
 
-use vanguard_common::{maps::GlobalStats, parse::AsStrExt};
+use vanguard_common::{
+    erret_result::ErrResult,
+    maps::GlobalStats,
+    parse::AsStrExt
+};
 
 use crate::vanguard_api::{self, vanguard_client::*, *};
 
@@ -11,13 +15,13 @@ pub struct VanguardGrpcClient {
 }
 
 impl VanguardGrpcClient {
-    pub async fn connect(addr: SocketAddr) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn connect(addr: SocketAddr) -> ErrResult<Self> {
         let endpoint = format!("http://{}", addr);
         let inner = VanguardClient::connect(endpoint).await?;
         Ok(Self { inner })
     }
 
-    pub async fn connect_local() -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn connect_local() -> ErrResult<Self> {
         let endpoint = "127.0.0.1:8080";
         let inner = VanguardClient::connect(endpoint).await?;
         Ok(Self { inner })

@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use vanguard_common::{config::*, error::VanguardError, *};
+use vanguard_common::{erret_result::*};
 use vanguard_grpc::{client::VanguardGrpcClient};
 
 #[derive(Parser)]
@@ -12,11 +12,11 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub fn exec_cmd() ->  ErrResult<()> {
+    pub async fn exec_cmd() ->  ErrResult<()> {
         let cli = Cli::parse();
 
         if let Some(cmd) = cli.command {
-            cmd.handle_cmd()?;
+            cmd.handle_cmd().await?;
         };
 
         Ok(())
@@ -32,21 +32,31 @@ pub enum Commands {
 }
 
 impl Commands {
-    pub fn handle_cmd(self) -> ErrResult<()> {
+    pub async fn handle_cmd(self) -> ErrResult<()> {
         match self {
             Self::Rules(cmd) => {
-                RulesCommands::handle_rules(cmd)?;
+                RulesCommands::handle_rules(cmd).await?;
             }
             Self::Stats => {
-                Self::show_stats()?;
+                Self::show_stats().await?;
             }
         }
 
         Ok(())
     }
 
-    fn show_stats() -> ErrResult<()> {
+    async fn show_stats() -> ErrResult<()> {
+        let mut grpc = VanguardGrpcClient::connect_local().await?;
+        let stats = grpc.get_stats().await?;
 
+        println!();
+        println!("VANGUARD PACKET STATS:");
+        println!("  total: {}", stats.total);
+        println!("  dropped: {}", stats.dropped);
+        println!("  passed: {}", stats.passed);
+        println!("  tx: {}", stats.tx);
+        println!("  redirected: {}", stats.redirected);
+        println!();
 
         Ok(())
     }
@@ -57,48 +67,48 @@ pub enum RulesCommands {
     List,
 
     Add {
-        #[arg(short, long)]
+        #[command(subcommand)]
         rule: vanguard_common::maps::Rule,
     },
 
     Del {
-        #[arg(short, long)]
+        #[command(subcommand)]
         key: vanguard_common::maps::RuleKey,
     },
 }
 
 impl RulesCommands {
-    pub fn handle_rules(self) -> ErrResult<()> {
+    pub async fn handle_rules(self) -> ErrResult<()> {
         match self {
             Self::List => {
-                Self::list()?;
+                Self::list().await?;
             }
             Self::Add { rule } => {
-                Self::add_rule(rule)?;
+                Self::add_rule(rule).await?;
             }
             Self::Del { key } => {
-                Self::del_rule(key)?;
+                Self::del_rule(key).await?;
             }
         }
 
         Ok(())
     }
 
-    fn list() -> ErrResult<()> {
+    async fn list() -> ErrResult<()> {
 
 
         Ok(())
     }
 
-    fn add_rule(rule: vanguard_common::maps::Rule) -> ErrResult<()> {
-        let grpc = VanguardGrpcClient::connect_local().await?;
-        grpc.add_rule(rule)?;
+    async fn add_rule(rule: vanguard_common::maps::Rule) -> ErrResult<()> {
+        let mut grpc = VanguardGrpcClient::connect_local().await?;
+        grpc.add_rule(rule).await?;
         Ok(())
     }
 
-    fn del_rule(key: vanguard_common::maps::RuleKey) -> ErrResult<()> {
-        let grpc = VanguardGrpcClient::connect_local().await?;
-        grpc.del_rule(key)?;
+    async fn del_rule(key: vanguard_common::maps::RuleKey) -> ErrResult<()> {
+        let mut grpc = VanguardGrpcClient::connect_local().await?;
+        grpc.del_rule(key).await?;
         Ok(())
     }
 }

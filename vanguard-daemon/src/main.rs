@@ -1,5 +1,7 @@
 use std::sync::Arc;
+
 use tokio::sync::Mutex;
+use tokio::signal::unix::*;
 
 use aya::{
     Ebpf,
@@ -9,14 +11,11 @@ use aya_log::EbpfLogger;
 
 use libsystemd::daemon::{self, *};
 
-use tokio::signal::unix::*;
-
 use vanguard_common::{
-    config::{GrpcApi, VanguardConfig},
-    error::VanguardError,
-    maps,
-    brevno::*,
-    erret_result::*,
+    brevno::{self, *}, config::{
+        GrpcApi,
+        VanguardConfig
+    }, erret_result::*, error::VanguardError, maps,
 };
 
 use vanguard_grpc::server::start_grpc_server;
@@ -27,23 +26,29 @@ struct XdpDaemon {
 }
 
 impl XdpDaemon {
-    fn load() -> ErrResult<Self> {
+    async fn load() -> ErrResult<Self> {
         info!("Starting daemon...");
 
-        Self::notify()?;
+        let iface = "eth0";
+
+        Self::notify();
 
         let mut bpf = aya::Ebpf::load_file("../target/bpfel-unknown-none/release/vanguard-core")?;
 
         let program: &mut Xdp = bpf.program_mut("core").unwrap().try_into()?;
         program.load()?;
 
-        let link_id = program.attach(&config.iface, XdpMode::default())
+        let link_id = program.attach(iface, XdpMode::default())
             .map_err(|_| VanguardError::Ebpf("failed to attach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
 
-        Ok(XdpDaemon {
+        let mut daemon = XdpDaemon {
             bpf: Arc::new(Mutex::new(bpf)),
             link_id,
-        })
+        };
+
+        daemon.init_logger().await?;
+
+        Ok(daemon)
     }
 
     async fn init_logger(&mut self) -> ErrResult<()> {
@@ -73,18 +78,6 @@ impl XdpDaemon {
         Ok(())
     }
 
-    async fn cleanup(self) -> ErrResult<()> {
-        let mut bpf = self.bpf.lock().await;
-        let program: &mut Xdp = bpf.program_mut("core").unwrap().try_into()?;
-
-        program.detach(self.link_id)
-            .map_err(|_| VanguardError::Ebpf("failed to detach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
-
-        program.unload()?;
-
-        Ok(())
-    }
-
     async fn apply_cfg(&mut self, config: VanguardConfig) -> ErrResult<()> {
         let mut bpf = self.bpf.lock().await;
 
@@ -103,13 +96,13 @@ impl XdpDaemon {
         }
 
         if config.grpc.up {
-            Self::grpc(&mut bpf, config.grpc).await?;
+            self.grpc(&config.grpc).await?;
         }
 
         Ok(())
     }
 
-    fn notify() -> ErrResult<()> {
+    fn notify() {
         if daemon::booted() {
             if let Err(e) = daemon::notify(false, &[NotifyState::Ready]) {
                 error!("Failed to notify systemd: {}", e);
@@ -119,53 +112,69 @@ impl XdpDaemon {
         } else {
             info!("Not running under systemd");
         }
+    }
+
+    async fn grpc(&self, grpc: &GrpcApi) -> ErrResult<()> {
+        let default_addr = "[::1]:8080".parse().expect("valid addr");
+
+        let bpf = self.bpf.clone();
+
+        tokio::spawn(async move {
+            if let Err(e) = start_grpc_server(bpf, default_addr).await {
+                error!("local grpc server failed: {}", e);
+            }
+        });
+
+        let bpf = self.bpf.clone();
+        if grpc.up {
+            let addr = grpc.addr;
+            tokio::spawn(async move {
+                if let Err(e) = start_grpc_server(bpf, addr).await {
+                    error!("grpc server failed: {}", e);
+                }
+            });
+        }
 
         Ok(())
     }
 
-    async fn pidoras(self) -> ErrResult<()> {
-        let pid = std::process::id();
-        std::fs::write("/tmp/vanguard.pid", pid.to_string())?;
-        info!("PID file created: {}", pid);
-
+    async fn run(mut self) -> ErrResult<()> {
         let mut sigterm = signal(SignalKind::terminate())?;
         let mut sighup = signal(SignalKind::hangup())?;
 
         loop {
             tokio::select! {
                 _ = sigterm.recv() => {
+                    self.cleanup().await?;
                     info!("Shutting down...");
-                    break;
+                    break Ok(());
                 }
                 _ = sighup.recv() => {
                     info!("Reloading config...");
-                    if let Ok(new_config) = VanguardConfig::load("config.yaml") {
-                        self.apply_cfg(new_config).await?;
-                        info!("Config reloaded");
-                    } else {
-                        error!("Failed to reload config");
+                    match VanguardConfig::load("config.yaml") {
+                        Ok(new_config) => {
+                            if let Err(e) = self.apply_cfg(new_config).await {
+                                error!("Failed to apply reloaded config: {}", e);
+                            } else {
+                                info!("Config reloaded");
+                            }
+                        }
+                        Err(e) => error!("Failed to reload config: {}", e),
                     }
                 }
             }
         }
-
-        std::fs::remove_file("/tmp/vanguard.pid").ok();
-        info!("Daemon stopped");
-
-        Ok(())
     }
 
-    async fn grpc(bpf: &mut Ebpf, grpc: GrpcApi) -> ErrResult<()> {
-        let default_addr = "[::1]:8080".parse()?;
-        tokio::spawn(async move {
-            start_grpc_server(*bpf, default_addr).await?;
-        });
+    async fn cleanup(self) -> ErrResult<()> {
+        let mut bpf = self.bpf.lock().await;
 
-        if grpc.up {
-            tokio::spawn(async move {
-                start_grpc_server(*bpf, grpc.addr).await?;
-            });
-        }
+        let program: &mut Xdp = bpf.program_mut("core").unwrap().try_into()?;
+
+        program.detach(self.link_id)
+            .map_err(|_| VanguardError::Ebpf("failed to detach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
+
+        program.unload()?;
 
         Ok(())
     }
@@ -173,9 +182,10 @@ impl XdpDaemon {
 
 #[tokio::main]
 async fn main() -> ErrResult<()> {
-    let mut daemon = XdpDaemon::load()?;
-    &daemon.init_logger().await?;
-    &daemon.pidoras().await?;
+    let daemon = XdpDaemon::load().await?;
+    daemon.run().await?;
 
     Ok(())
 }
+
+brevno::init_global_logger!(128, 128, log::LogLevel::Info);

@@ -1760,7 +1760,7 @@ version = "0.1.0"
 dependencies = [
  "aya",
  "clap",
- "libc",
+ "tokio",
  "vanguard-common",
  "vanguard-grpc",
 ]
@@ -1786,7 +1786,6 @@ dependencies = [
  "aya",
  "aya-log",
  "env_logger",
- "libc",
  "libsystemd",
  "tokio",
  "vanguard-common",
