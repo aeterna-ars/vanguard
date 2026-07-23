@@ -67,12 +67,12 @@ pub enum RulesCommands {
     List,
 
     Add {
-        #[command(subcommand)]
+        #[command(flatten)]
         rule: vanguard_common::maps::Rule,
     },
 
     Del {
-        #[command(subcommand)]
+        #[command(flatten)]
         key: vanguard_common::maps::RuleKey,
     },
 }

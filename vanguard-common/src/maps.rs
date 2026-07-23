@@ -163,17 +163,18 @@ pub struct Rule {
 #[derive(Clone, Copy, Deserialize, Args)]
 pub struct RuleKey {
     #[serde(deserialize_with = "deserialize_ip")]
+    #[arg(long, value_parser = crate::parse::cli::parse_ip_arg)]
     pub ip: Ip,
 
     #[arg(short, long)]
     pub port: u16,
 
     #[serde(deserialize_with = "deserialize_eth")]
-    #[arg(short, long)]
+    #[arg(long, value_parser = crate::parse::cli::parse_eth_arg)]
     pub eth: EtherType,
 
     #[serde(deserialize_with = "deserialize_proto")]
-    #[arg(short, long)]
+    #[arg(long, value_parser = crate::parse::cli::parse_proto_arg)]
     pub proto: IpProto,
 }
 unsafe impl Pod for RuleKey {}
@@ -186,13 +187,13 @@ pub struct RuleValue {
     pub action: RuleAction,
 
     #[serde(default)]
-    #[arg(short, long)]
+    #[command(flatten)]
     pub to: Option<RuleKey>,
 }
 unsafe impl Pod for RuleValue {}
 
 #[repr(u32)]
-#[derive(Clone, Copy, Subcommand)]
+#[derive(Clone, Copy, ValueEnum)]
 pub enum RuleAction {
     ABORTED = 0,
     DROP = 1,
