@@ -4,8 +4,7 @@ use tokio::sync::Mutex;
 use tokio::signal::unix::*;
 
 use aya::{
-    Ebpf,
-    programs::{Xdp, XdpMode, xdp::XdpLinkId},
+    Ebpf, EbpfLoader, VerifierLogLevel, include_bytes_aligned, programs::{Xdp, XdpMode, xdp::XdpLinkId},
 };
 use aya_log::EbpfLogger;
 
@@ -29,13 +28,17 @@ impl XdpDaemon {
     async fn load() -> ErrResult<Self> {
         info!("Starting daemon...");
 
-        let iface = "eth0";
+        let iface = "wlp2s0";
 
         Self::notify();
 
-        let mut bpf = aya::Ebpf::load_file("../target/bpfel-unknown-none/release/vanguard-core")?;
+        let mut bpf = EbpfLoader::new()
+            .verifier_log_level(VerifierLogLevel::all()) 
+            .load(aya::include_bytes_aligned!("../../target/bpfel-unknown-none/release/vanguard-xdp"))?;
 
-        let program: &mut Xdp = bpf.program_mut("core").unwrap().try_into()?;
+        // let mut bpf = aya::Ebpf::load(include_bytes_aligned!("../../target/bpfel-unknown-none/release/vanguard-xdp"))?;
+
+        let program: &mut Xdp = bpf.program_mut("main").unwrap().try_into()?;
         program.load()?;
 
         let link_id = program.attach(iface, XdpMode::default())
@@ -180,12 +183,17 @@ impl XdpDaemon {
     }
 }
 
+brevno::init_global_logger!(128, 128, brevno::log::LogLevel::Info);
+
 #[tokio::main]
 async fn main() -> ErrResult<()> {
+    std::thread::spawn( || {
+        brevno::log::Logger::<128, 128>::init(log::LogLevel::Info);
+    }
+    );
+
     let daemon = XdpDaemon::load().await?;
     daemon.run().await?;
 
     Ok(())
 }
-
-brevno::init_global_logger!(128, 128, log::LogLevel::Info);

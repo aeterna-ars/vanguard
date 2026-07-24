@@ -7,7 +7,7 @@ build-std = ["core"]
 [target.bpfel-unknown-none]
 linker = "bpf-linker"
 rustflags = [
-    "-C", "debuginfo=2",
-    "-C", "link-arg=--btf",
     "-C", "panic=abort",
+    "-C", "link-arg=--btf",
+    "-C", "debuginfo=2",
 ]

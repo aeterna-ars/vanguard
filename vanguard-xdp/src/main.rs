@@ -16,7 +16,7 @@ use aya_log_ebpf::info;
 use crate::maps::{CONFIG, update_stats};
 
 #[xdp]
-pub fn core(ctx: XdpContext) -> u32 {
+pub fn main(ctx: XdpContext) -> u32 {
     match try_filter(ctx) {
         Ok(ret) => {
             info!(ctx, "passed");
@@ -46,9 +46,15 @@ fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     if maps::is_blocked(&addr, now) {
         return Err(xdp_action::XDP_DROP);
     } else if !maps::check_limit(&addr, now, config) {
-        maps::block_ip(addr, now, config);
+        maps::block_ip(&addr, now, config);
         return Err(xdp_action::XDP_DROP)
     }
 
     Ok(action)
+}
+
+#[cfg(not(test))]
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    unsafe { core::hint::unreachable_unchecked() }
 }

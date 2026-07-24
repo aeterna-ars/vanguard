@@ -21,7 +21,7 @@ brevno = { git = "https://github.com/ecdhe-x25519/brevno" }
 erret-macro = { path = "../../libs/erret/erret-macro" }
 erret-result = { path = "../../libs/erret/erret-result" }
 env_logger = "0.11.11"
-tokio = { version = "1.52.3", features = ["full"] }
+tokio = { version = "1.53.1", features = ["full"] }
 serde = "1.0.228"
 serde_yaml = "0.9.34"
 tonic = "0.14.6"
@@ -29,4 +29,4 @@ tonic-prost = "0.14.6"
 prost = "0.14.4"
 clap = "4.6.1"
 libsystemd = "0.7.2"
-network-types = "0.2.0"
+network-types = { version = "0.2.0", default-features = false }

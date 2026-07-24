@@ -16,9 +16,6 @@ use crate::error::VanguardError;
 
 use erret_result::*;
 
-use clap::*;
-
-#[repr(C)]
 #[derive(Clone, Copy, Deserialize)]
 pub struct Ip(pub u128);
 
@@ -37,7 +34,6 @@ macro_rules! get_map {
     }};
 }
 
-#[repr(C)]
 #[derive(Clone, Copy, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -68,7 +64,6 @@ impl ConfigMap {
     }
 }
 
-#[repr(C)]
 #[derive(Clone, Copy, Deserialize)]
 pub struct BlockEntry {
     pub blocked_until: u64,
@@ -149,8 +144,7 @@ impl WhitelistMap {
     }
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Deserialize, Args)]
+#[derive(Clone, Copy, Deserialize, clap::Args)]
 pub struct Rule {
     #[command(flatten)]
     pub key: RuleKey,
@@ -159,8 +153,7 @@ pub struct Rule {
     pub value: RuleValue,
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Deserialize, Args)]
+#[derive(Clone, Copy, Deserialize, clap::Args)]
 pub struct RuleKey {
     #[serde(deserialize_with = "deserialize_ip")]
     #[arg(long, value_parser = crate::parse::cli::parse_ip_arg)]
@@ -179,8 +172,7 @@ pub struct RuleKey {
 }
 unsafe impl Pod for RuleKey {}
 
-#[repr(C)]
-#[derive(Clone, Copy, Deserialize, Args)]
+#[derive(Clone, Copy, Deserialize, clap::Args)]
 pub struct RuleValue {
     #[serde(deserialize_with = "deserialize_action")]
     #[arg(short, long)]
@@ -193,7 +185,7 @@ pub struct RuleValue {
 unsafe impl Pod for RuleValue {}
 
 #[repr(u32)]
-#[derive(Clone, Copy, ValueEnum)]
+#[derive(Clone, Copy, clap::ValueEnum)]
 pub enum RuleAction {
     ABORTED = 0,
     DROP = 1,
@@ -236,7 +228,6 @@ impl RulesMap {
     }
 }
 
-#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct GlobalStats {
     pub total: u64,

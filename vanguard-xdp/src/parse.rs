@@ -11,9 +11,10 @@ use network_types::{
 };
 
 use crate::inline::ptr_at;
-use crate::maps::{RULES, RuleKey};
+use crate::maps::{RULES, RuleKey, Ip};
 
-pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(u128, u32), u32> {
+#[inline(always)]
+pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(Ip, u32), u32> {
     let ethhdr: *const EthHdr = match ptr_at(&ctx, offset) {
         Ok(hdr) => hdr,
         Err(_) => return Err(xdp_action::XDP_PASS),
@@ -25,7 +26,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(u128, u32), u32
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_DROP),
             };
-            let src = u32::from_be_bytes(unsafe { (*iphdr).src_addr });
+            let src = Ip::from_v4(unsafe { (*iphdr).src_addr });
             let ip_len = unsafe { (*iphdr).ihl() as usize * 4 };
             let proto = match unsafe { (*iphdr).proto() } {
                 Ok(p) => p,
@@ -37,25 +38,24 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(u128, u32), u32
             let port = try_filter_port(&ctx, ip_len, proto)?;
 
             let key = RuleKey {
-                ip: src as u128,
+                ip: src,
                 port,
                 eth: EtherType::Ipv4,
                 proto,
-                pad: 0,
             };
 
             if let Some(act) = unsafe { RULES.get(&key) } {
-                return Ok((src as u128, act.action as u32));
+                return Ok((src, act.action as u32));
             }
 
-            Ok((src as u128, xdp_action::XDP_PASS))
+            Ok((src, xdp_action::XDP_PASS))
         },
         Ok(EtherType::Ipv6) => {
             let iphdr: *const Ipv6Hdr = match ptr_at(&ctx, EthHdr::LEN) {
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_DROP),
             };
-            let src = u128::from_be_bytes(unsafe { (*iphdr).src_addr });
+            let src = Ip::from_v6(unsafe { (*iphdr).src_addr });
             let ip_len = Ipv6Hdr::LEN;
             let proto = match unsafe { (*iphdr).next_hdr() } {
                 Ok(p) => p,
@@ -71,7 +71,6 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(u128, u32), u32
                 port,
                 eth: EtherType::Ipv6,
                 proto,
-                pad: 0,
             };
 
             if let Some(act) = unsafe { RULES.get(&key) } {
@@ -86,6 +85,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(u128, u32), u32
     }
 }
 
+#[inline(always)]
 fn try_filter_port(ctx: &XdpContext, offset: usize, protocol: IpProto) -> Result<u16, u32> {
     match protocol {
         IpProto::Tcp => {
@@ -107,7 +107,7 @@ fn try_filter_port(ctx: &XdpContext, offset: usize, protocol: IpProto) -> Result
             return Ok(port)
         },
         _ => {
-            return Err(xdp_action::XDP_DROP);
+            return Err(xdp_action::XDP_PASS);
         }
     }
 }
