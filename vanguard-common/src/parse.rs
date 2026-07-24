@@ -1,4 +1,11 @@
-use std::{net::{IpAddr, Ipv6Addr}, str::FromStr};
+use std::{
+    net::{
+        IpAddr,
+        Ipv6Addr
+    },
+    str::FromStr
+};
+
 use erret_result::*;
 
 use crate::maps::*;
@@ -11,6 +18,64 @@ use network_types::{
 use crate::error::VanguardError;
 
 use serde::de::Error as SerdeDeError;
+
+impl From<Ip> for XdpIp {
+    fn from(ip: Ip) -> Self {
+        Self(ip.0.to_be_bytes())
+    }
+}
+
+impl From<Config> for XdpConfig {
+    fn from(cfg: Config) -> Self {
+        XdpConfig {
+            rate_limit: cfg.rate_limit,
+            block_time: cfg.block_time,
+        }
+    }
+}
+
+impl From<RuleAction> for XdpRuleAction {
+    fn from(action: RuleAction) -> Self {
+        match action {
+            RuleAction::ABORTED => XdpRuleAction::ABORTED,
+            RuleAction::DROP => XdpRuleAction::DROP,
+            RuleAction::PASS => XdpRuleAction::PASS,
+            RuleAction::TX => XdpRuleAction::TX,
+            RuleAction::REDIRECT => XdpRuleAction::REDIRECT,
+        }
+    }
+}
+
+impl From<RuleKey> for XdpRuleKey {
+    fn from(key: RuleKey) -> Self {
+        XdpRuleKey {
+            ip: XdpIp::from(key.ip),
+            port: key.port,
+            eth: key.eth,
+            proto: key.proto,
+        }
+    }
+}
+
+impl From<RuleValue> for XdpRuleValue {
+    fn from(val: RuleValue) -> Self {
+        match val.to {
+            Some(target_key) => XdpRuleValue {
+                action: XdpRuleAction::from(val.action),
+                to: XdpRuleKey::from(target_key),
+            },
+            None => XdpRuleValue {
+                action: XdpRuleAction::from(val.action),
+                to: XdpRuleKey {
+                    ip: XdpIp([0; 16]),
+                    port: 0,
+                    eth: network_types::eth::EtherType::Loop,
+                    proto: network_types::ip::IpProto::Ipv4,
+                },
+            },
+        }
+    }
+}
 
 pub trait AsStrExt {
     fn as_str(&self) -> String;
@@ -108,7 +173,7 @@ impl AsStrExt for RuleAction {
     }
 }
 
-pub mod serialize {
+pub mod config {
     use super::*;
     use serde::{Deserialize, Deserializer};
 

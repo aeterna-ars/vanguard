@@ -6,15 +6,11 @@ use aya::Ebpf;
 
 use tonic::{transport::Server, Request, Response, Status};
 
-use crate::vanguard_api::{self, vanguard_server::*, *};
+use super::vanguard_api::{self, vanguard_server::*, *};
 
-use vanguard_common::{
+use crate::{
     erret_result::*,
-    maps::{
-        self,
-        GlobalStats,
-        RuleAction
-    },
+    maps::*,
     parse::*,
     brevno::*,
 };
@@ -34,15 +30,15 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        let cfg = maps::ConfigMap::read(&mut bpf)
+        let cfg = maps2::ConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
 
-        let new = maps::Config {
+        let new = maps2::Config {
             rate_limit: req.limit,
             block_time: cfg.block_time
         };
 
-        maps::ConfigMap::write(&mut bpf, new)
+        maps2::ConfigMap::write(&mut bpf, new)
             .map_err(|e| Status::internal(format!("write map error: {e}")))?;
 
         Ok(Response::new(()))
@@ -57,15 +53,15 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        let cfg = maps::ConfigMap::read(&mut bpf)
+        let cfg = maps2::ConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
 
-        let new = maps::Config {
+        let new = maps2::Config {
             rate_limit: cfg.rate_limit,
             block_time: req.time,
         };
 
-        maps::ConfigMap::write(&mut bpf, new)
+        maps2::ConfigMap::write(&mut bpf, new)
             .map_err(|e| Status::internal(format!("write map error: {e}")))?;
 
         Ok(Response::new(()))
@@ -83,7 +79,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        maps::BlocklistMap::block(&mut bpf, ip, req.block_until)
+        maps2::BlocklistMap::block(&mut bpf, ip, req.block_until)
             .map_err(|e| Status::internal(format!("address block error: {e}")))?;
 
         Ok(Response::new(()))
@@ -101,7 +97,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        maps::WhitelistMap::insert(&mut bpf, ip)
+        maps2::WhitelistMap::insert(&mut bpf, ip)
             .map_err(|e| Status::internal(format!("insert map error: {e}")))?;
 
         Ok(Response::new(()))
@@ -126,7 +122,7 @@ impl Vanguard for VanguardService {
         let value = v.unwrap();
         let action = value.action;
 
-        let mut redirect_kotakbas: Option<vanguard_common::maps::RuleKey> = None;
+        let mut redirect_kotakbas: Option<vanguard_common::maps2::RuleKey> = None;
 
         let mut redirect_fmt = String::new();
         if value.redirect_to.is_some() {
@@ -146,12 +142,12 @@ impl Vanguard for VanguardService {
 
         let rule_key = parse_rule_key(key)?;
         
-        let rule_value = vanguard_common::maps::RuleValue {
+        let rule_value = vanguard_common::maps2::RuleValue {
             action: RuleAction::try_from(value.action).map_err(|_| Status::invalid_argument("invalid action"))?,
             to: redirect_kotakbas,
         };
         
-        maps::RulesMap::add(&mut bpf, rule_key, rule_value).map_err(|_| Status::internal("ebpf map error"))?;
+        maps2::RulesMap::add(&mut bpf, rule_key, rule_value).map_err(|_| Status::internal("ebpf map error"))?;
         
         Ok(Response::new(()))
     }
@@ -176,7 +172,7 @@ impl Vanguard for VanguardService {
 
         let rule_key = parse_rule_key(key)?;
         
-        maps::RulesMap::remove(&mut bpf, rule_key).map_err(|_| Status::internal("ebpf map error"))?;
+        maps2::RulesMap::remove(&mut bpf, rule_key).map_err(|_| Status::internal("ebpf map error"))?;
         
         Ok(Response::new(()))
     }
@@ -204,8 +200,8 @@ impl Vanguard for VanguardService {
     }
 }
 
-fn parse_rule_key(key: vanguard_api::RuleKey) -> Result<vanguard_common::maps::RuleKey, Status> {
-    Ok(vanguard_common::maps::RuleKey {
+fn parse_rule_key(key: vanguard_api::RuleKey) -> Result<vanguard_common::maps2::RuleKey, Status> {
+    Ok(vanguard_common::maps2::RuleKey {
         ip: parse_ip(key.ip).map_err(|_| Status::invalid_argument("invalid ip"))?,
         port: key.port.try_into().map_err(|_| Status::invalid_argument("port should be uint16"))?,
         eth: parse_eth(key.eth).map_err(|_| Status::invalid_argument("invalid eth"))?,

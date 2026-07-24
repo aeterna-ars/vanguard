@@ -11,10 +11,10 @@ use network_types::{
 };
 
 use crate::inline::ptr_at;
-use crate::maps::{RULES, RuleKey, Ip};
+use crate::maps::*;
 
 #[inline(always)]
-pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(Ip, u32), u32> {
+pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(XdpIp, u32), u32> {
     let ethhdr: *const EthHdr = match ptr_at(&ctx, offset) {
         Ok(hdr) => hdr,
         Err(_) => return Err(xdp_action::XDP_PASS),
@@ -26,7 +26,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(Ip, u32), u32> 
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_DROP),
             };
-            let src = Ip::from_v4(unsafe { (*iphdr).src_addr });
+            let src = XdpIp::from_v4(unsafe { (*iphdr).src_addr });
             let ip_len = unsafe { (*iphdr).ihl() as usize * 4 };
             let proto = match unsafe { (*iphdr).proto() } {
                 Ok(p) => p,
@@ -37,7 +37,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(Ip, u32), u32> 
 
             let port = try_filter_port(&ctx, ip_len, proto)?;
 
-            let key = RuleKey {
+            let key = XdpRuleKey {
                 ip: src,
                 port,
                 eth: EtherType::Ipv4,
@@ -55,7 +55,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(Ip, u32), u32> 
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_DROP),
             };
-            let src = Ip::from_v6(unsafe { (*iphdr).src_addr });
+            let src = XdpIp::from_v6(unsafe { (*iphdr).src_addr });
             let ip_len = Ipv6Hdr::LEN;
             let proto = match unsafe { (*iphdr).next_hdr() } {
                 Ok(p) => p,
@@ -66,7 +66,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(Ip, u32), u32> 
 
             let port = try_filter_port(&ctx, ip_len, proto)?;
 
-            let key = RuleKey {
+            let key = XdpRuleKey {
                 ip: src,
                 port,
                 eth: EtherType::Ipv6,

@@ -13,5 +13,13 @@ erret-macro = { workspace = true }
 erret-result = { workspace = true }
 brevno = { workspace = true }
 
+tokio = { workspace = true }
+tonic = { workspace = true }
+tonic-prost = { workspace = true }
+prost = { workspace = true }
+
+[build-dependencies]
+tonic-prost-build = "0.14.6"
+
 [features]
 default = []

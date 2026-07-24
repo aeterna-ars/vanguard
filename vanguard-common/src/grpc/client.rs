@@ -2,13 +2,13 @@ use std::net::SocketAddr;
 
 use tonic::transport::Channel;
 
-use vanguard_common::{
+use crate::{
     erret_result::ErrResult,
-    maps::GlobalStats,
+    maps::*,
     parse::AsStrExt
 };
 
-use crate::vanguard_api::{self, vanguard_client::*, *};
+use super::vanguard_api::{self, vanguard_client::*, *};
 
 pub struct VanguardGrpcClient {
     pub inner: VanguardClient<Channel>,
@@ -51,7 +51,7 @@ impl VanguardGrpcClient {
         Ok(())
     }
 
-    pub async fn add_rule(&mut self, rule: vanguard_common::maps::Rule) -> Result<(), tonic::Status> {
+    pub async fn add_rule(&mut self, rule: vanguard_common::maps2::Rule) -> Result<(), tonic::Status> {
         let k = rule.key;
         let v = rule.value;
 
@@ -88,7 +88,7 @@ impl VanguardGrpcClient {
         Ok(())
     }
 
-    pub async fn del_rule(&mut self, rule_key: vanguard_common::maps::RuleKey) -> Result<(), tonic::Status> {
+    pub async fn del_rule(&mut self, rule_key: vanguard_common::maps2::RuleKey) -> Result<(), tonic::Status> {
         let rule = parse_rule_key(rule_key);
 
         let request = tonic::Request::new(DelRuleRequest { key: Some(rule) });
@@ -112,7 +112,7 @@ impl VanguardGrpcClient {
     }
 }
 
-fn parse_rule_key(key: vanguard_common::maps::RuleKey) -> RuleKey {
+fn parse_rule_key(key: vanguard_common::maps2::RuleKey) -> RuleKey {
     vanguard_api::RuleKey {
         ip: key.ip.as_str(),
         port: key.port as u32,

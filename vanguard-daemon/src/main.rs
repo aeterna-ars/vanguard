@@ -4,7 +4,7 @@ use tokio::sync::Mutex;
 use tokio::signal::unix::*;
 
 use aya::{
-    Ebpf, EbpfLoader, VerifierLogLevel, include_bytes_aligned, programs::{Xdp, XdpMode, xdp::XdpLinkId},
+    Ebpf, EbpfLoader, VerifierLogLevel, programs::{Xdp, XdpMode, xdp::XdpLinkId},
 };
 use aya_log::EbpfLogger;
 
@@ -14,7 +14,7 @@ use vanguard_common::{
     brevno::{self, *}, config::{
         GrpcApi,
         VanguardConfig
-    }, erret_result::*, error::VanguardError, maps,
+    }, erret_result::*, error::VanguardError, maps2,
 };
 
 use vanguard_grpc::server::start_grpc_server;
@@ -25,18 +25,17 @@ struct XdpDaemon {
 }
 
 impl XdpDaemon {
-    async fn load() -> ErrResult<Self> {
+    async fn load(config_path: &str) -> ErrResult<Self> {
         info!("Starting daemon...");
 
         let iface = "wlp2s0";
+        let cfg = VanguardConfig::load(config_path)?;
 
         Self::notify();
 
         let mut bpf = EbpfLoader::new()
             .verifier_log_level(VerifierLogLevel::all()) 
             .load(aya::include_bytes_aligned!("../../target/bpfel-unknown-none/release/vanguard-xdp"))?;
-
-        // let mut bpf = aya::Ebpf::load(include_bytes_aligned!("../../target/bpfel-unknown-none/release/vanguard-xdp"))?;
 
         let program: &mut Xdp = bpf.program_mut("main").unwrap().try_into()?;
         program.load()?;
@@ -50,6 +49,8 @@ impl XdpDaemon {
         };
 
         daemon.init_logger().await?;
+
+        daemon.apply_cfg(cfg).await?;
 
         Ok(daemon)
     }
@@ -84,23 +85,21 @@ impl XdpDaemon {
     async fn apply_cfg(&mut self, config: VanguardConfig) -> ErrResult<()> {
         let mut bpf = self.bpf.lock().await;
 
-        maps::ConfigMap::write(&mut bpf, config.config)?;
+        maps2::ConfigMap::write(&mut bpf, config.config)?;
 
         for ip in config.blacklist {
-            maps::BlocklistMap::block(&mut bpf, ip.ip.0, ip.blocked_until)?;
+            maps2::BlocklistMap::block(&mut bpf, ip.ip.0, ip.blocked_until)?;
         }
 
         for ip in config.whitelist {
-            maps::WhitelistMap::insert(&mut bpf, ip.0)?;
+            maps2::WhitelistMap::insert(&mut bpf, ip.0)?;
         }
 
         for rule in config.rules {
-            maps::RulesMap::add(&mut bpf, rule.key, rule.value)?;
+            maps2::RulesMap::add(&mut bpf, rule.key, rule.value)?;
         }
 
-        if config.grpc.up {
-            self.grpc(&config.grpc).await?;
-        }
+        self.grpc(&config.grpc).await?;
 
         Ok(())
     }
@@ -118,10 +117,9 @@ impl XdpDaemon {
     }
 
     async fn grpc(&self, grpc: &GrpcApi) -> ErrResult<()> {
-        let default_addr = "[::1]:8080".parse().expect("valid addr");
+        let default_addr = "127.0.0.1:8080".parse().expect("invalid addr");
 
         let bpf = self.bpf.clone();
-
         tokio::spawn(async move {
             if let Err(e) = start_grpc_server(bpf, default_addr).await {
                 error!("local grpc server failed: {}", e);
@@ -187,12 +185,16 @@ brevno::init_global_logger!(128, 128, brevno::log::LogLevel::Info);
 
 #[tokio::main]
 async fn main() -> ErrResult<()> {
-    std::thread::spawn( || {
-        brevno::log::Logger::<128, 128>::init(log::LogLevel::Info);
-    }
-    );
+    let config_path = "/home/user/projects/projects/vanguard/vanguard.yml";
 
-    let daemon = XdpDaemon::load().await?;
+    std::thread::spawn( || {
+        let logger = brevno::log::Logger::<128, 128>::init(log::LogLevel::Info);
+        // loop {
+        //     println!("{}", logger.read_log().unwrap().decode().unwrap())
+        // }
+    });
+
+    let daemon = XdpDaemon::load(config_path).await?;
     daemon.run().await?;
 
     Ok(())

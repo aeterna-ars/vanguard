@@ -10,7 +10,6 @@ env_logger = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 libsystemd = { workspace = true }
 vanguard-common = { path = "../vanguard-common" }
-vanguard-grpc = { path = "../vanguard-grpc" }
 
 [features]
 default = []

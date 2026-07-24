@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use vanguard_common::{erret_result::*, maps::Ip, parse::AsStrExt};
+use vanguard_common::{erret_result::*, maps2::Ip, parse::AsStrExt};
 use vanguard_grpc::{client::VanguardGrpcClient};
 
 #[derive(Parser)]
@@ -185,13 +185,13 @@ pub enum RulesCommands {
     #[command(about = "XDP add rule", long_about)]
     Add {
         #[command(flatten)]
-        rule: vanguard_common::maps::Rule,
+        rule: vanguard_common::maps2::Rule,
     },
 
     #[command(about = "XDP delete rule", long_about)]
     Del {
         #[command(flatten)]
-        key: vanguard_common::maps::RuleKey,
+        key: vanguard_common::maps2::RuleKey,
     },
 }
 impl RulesCommands {
@@ -217,13 +217,13 @@ impl RulesCommands {
         Ok(())
     }
 
-    async fn add_rule(rule: vanguard_common::maps::Rule) -> ErrResult<()> {
+    async fn add_rule(rule: vanguard_common::maps2::Rule) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
         grpc.add_rule(rule).await?;
         Ok(())
     }
 
-    async fn del_rule(key: vanguard_common::maps::RuleKey) -> ErrResult<()> {
+    async fn del_rule(key: vanguard_common::maps2::RuleKey) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
         grpc.del_rule(key).await?;
         Ok(())

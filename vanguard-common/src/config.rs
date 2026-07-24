@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use serde::{Deserialize, Deserializer};
 
-use crate::parse::{serialize::*, *};
+use crate::parse::{config::*, *};
 use crate::maps::*;
 use erret_result::*;
 
@@ -88,6 +88,21 @@ mod test_cfg {
         eth::EtherType,
         ip::IpProto,
     };
+
+    #[test]
+    fn test_parse_from_file() {
+        let yaml = "../vanguard.yml";
+
+        let cfg: VanguardConfig = VanguardConfig::load(yaml).unwrap();
+
+        assert_eq!(cfg.config.rate_limit, 1000);
+        assert_eq!(cfg.config.block_time, 1000);
+        assert_eq!(cfg.grpc.addr.to_string(), "0.0.0.0:8080");
+        assert_eq!(cfg.grpc.up, true);
+        assert_eq!(cfg.blacklist.len(), 2);
+        assert_eq!(cfg.whitelist.len(), 3);
+        assert_eq!(cfg.rules.len(), 3);
+    }
 
     #[test]
     fn test_parse_full_config() {
