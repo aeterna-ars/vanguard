@@ -9,7 +9,7 @@ aya-log = { workspace = true }
 env_logger = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 libsystemd = { workspace = true }
-vanguard-common = { path = "../vanguard-common" }
+vanguard-core = { path = "../vanguard-core" }
 
 [features]
 default = []

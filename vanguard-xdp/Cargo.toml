@@ -14,7 +14,7 @@ panic = "abort"
 aya-ebpf = { workspace = true }
 aya-log-ebpf = { workspace = true }
 network-types = { workspace = true }
-vanguard-common = { path = "../vanguard-common" }
+vanguard-core = { path = "../vanguard-core" }
 
 [features]
 default = []

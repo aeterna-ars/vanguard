@@ -4,9 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+vanguard-core = { path = "../vanguard-core" }
 aya = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-vanguard-common = { path = "../vanguard-common" }
 tokio = { workspace = true }
 
 [features]

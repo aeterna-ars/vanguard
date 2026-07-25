@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use vanguard_common::{erret_result::*, maps2::Ip, parse::AsStrExt};
+use vanguard_common::{erret_result::*, maps::*, parse::AsStrExt};
 use vanguard_grpc::{client::VanguardGrpcClient};
 
 #[derive(Parser)]
@@ -24,11 +24,11 @@ impl Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    #[command(about = "XDP rules settings", long_about)]
+    #[command(about = "XDP rules commands", long_about)]
     #[command(subcommand)]
     Rules(RulesCommands),
 
-    #[command(about = "Block or whitelist IP", long_about)]
+    #[command(about = "Black or whitelist IP", long_about)]
     #[command(subcommand)]
     Lists(ListsCommands),
 
@@ -97,7 +97,7 @@ pub enum BlacklistCommands {
     #[command(about = "Add to XDP blacklist", long_about)]
     Block {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: Ip,
+        ip: String,
 
         #[arg(long)]
         until: u64,
@@ -106,7 +106,7 @@ pub enum BlacklistCommands {
     #[command(about = "Delete from XDP blacklist", long_about)]
     Del {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: Ip,
+        ip: String,
     },
 }
 impl BlacklistCommands {
@@ -141,13 +141,13 @@ pub enum WhitelistCommands {
     #[command(about = "Add to XDP whitelist", long_about)]
     White {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: Ip,
+        ip: String,
     },
 
     #[command(about = "Delete from XDP whitelist", long_about)]
     Del {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: Ip
+        ip: String,
     },
 }
 impl WhitelistCommands {
@@ -185,13 +185,15 @@ pub enum RulesCommands {
     #[command(about = "XDP add rule", long_about)]
     Add {
         #[command(flatten)]
-        rule: vanguard_common::maps2::Rule,
+        rule: ,
+
+        
     },
 
     #[command(about = "XDP delete rule", long_about)]
     Del {
         #[command(flatten)]
-        key: vanguard_common::maps2::RuleKey,
+        key: ,
     },
 }
 impl RulesCommands {

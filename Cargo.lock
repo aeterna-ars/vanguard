@@ -1714,11 +1714,11 @@ dependencies = [
  "aya",
  "clap",
  "tokio",
- "vanguard-common",
+ "vanguard-core",
 ]
 
 [[package]]
-name = "vanguard-common"
+name = "vanguard-core"
 version = "0.1.0"
 dependencies = [
  "aya",
@@ -1745,7 +1745,7 @@ dependencies = [
  "env_logger",
  "libsystemd",
  "tokio",
- "vanguard-common",
+ "vanguard-core",
 ]
 
 [[package]]
@@ -1755,7 +1755,7 @@ dependencies = [
  "aya-ebpf",
  "aya-log-ebpf",
  "network-types",
- "vanguard-common",
+ "vanguard-core",
 ]
 
 [[package]]

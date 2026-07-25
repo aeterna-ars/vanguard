@@ -1,5 +1,5 @@
 [package]
-name = "vanguard-common"
+name = "vanguard-core"
 version.workspace = true
 edition.workspace = true
 

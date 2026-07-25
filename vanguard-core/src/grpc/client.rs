@@ -5,7 +5,7 @@ use tonic::transport::Channel;
 use crate::{
     erret_result::ErrResult,
     maps::*,
-    parse::AsStrExt
+    parsetrash::AsStrExt
 };
 
 use super::vanguard_api::{self, vanguard_client::*, *};

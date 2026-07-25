@@ -2,7 +2,7 @@
 members = [
     "vanguard-xdp",
     "vanguard-daemon",
-    "vanguard-common",
+    "vanguard-core",
     "vanguard-cli",
 ]
 resolver = "3"
