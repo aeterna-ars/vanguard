@@ -6,14 +6,24 @@ use aya::Ebpf;
 
 use tonic::{transport::Server, Request, Response, Status};
 
-use super::vanguard_api::{self, vanguard_server::*, *};
+use super::vanguard_api::{vanguard_server::*, *};
 
-use crate::{
-    erret_result::*,
-    maps::*,
-    parsetrash::*,
-    brevno::*,
+use crate::maps::{
+    rules::*,
+    common::{
+        parse::*,
+        *,
+    },
+    stats::*,
+    config::*,
+    ip::*,
+    blacklist::*,
+    whitelist::*,
 };
+
+use erret_result::*;
+
+use brevno::*;
 
 struct VanguardService {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -30,15 +40,15 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        let cfg = maps2::ConfigMap::read(&mut bpf)
+        let cfg = ConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
 
-        let new = maps2::Config {
+        let new = XdpConfig {
             rate_limit: req.limit,
             block_time: cfg.block_time
         };
 
-        maps2::ConfigMap::write(&mut bpf, new)
+        ConfigMap::write(&mut bpf, new)
             .map_err(|e| Status::internal(format!("write map error: {e}")))?;
 
         Ok(Response::new(()))
@@ -53,15 +63,15 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        let cfg = maps2::ConfigMap::read(&mut bpf)
+        let cfg = ConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
 
-        let new = maps2::Config {
+        let new = XdpConfig {
             rate_limit: cfg.rate_limit,
             block_time: req.time,
         };
 
-        maps2::ConfigMap::write(&mut bpf, new)
+        ConfigMap::write(&mut bpf, new)
             .map_err(|e| Status::internal(format!("write map error: {e}")))?;
 
         Ok(Response::new(()))
@@ -79,7 +89,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        maps2::BlocklistMap::block(&mut bpf, ip, req.block_until)
+        BlocklistMap::block(&mut bpf, ip, req.block_until)
             .map_err(|e| Status::internal(format!("address block error: {e}")))?;
 
         Ok(Response::new(()))
@@ -97,7 +107,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        maps2::WhitelistMap::insert(&mut bpf, ip)
+        WhitelistMap::insert(&mut bpf, ip)
             .map_err(|e| Status::internal(format!("insert map error: {e}")))?;
 
         Ok(Response::new(()))
@@ -107,7 +117,7 @@ impl Vanguard for VanguardService {
         &self,
         request: Request<AddRuleRequest>,
     ) -> Result<Response<()>, Status> {
-        let req = request.into_inner().rule.unwrap();
+        let req = request.into_inner();
         let k = req.key;
         let v = req.value;
 
@@ -122,11 +132,11 @@ impl Vanguard for VanguardService {
         let value = v.unwrap();
         let action = value.action;
 
-        let mut redirect_kotakbas: Option<vanguard_common::maps2::RuleKey> = None;
+        let mut redirect_kotakbas: Option<RuleKey> = None;
 
         let mut redirect_fmt = String::new();
-        if value.redirect_to.is_some() {
-            let redirect_to = Some(value.redirect_to.unwrap());
+        if value.redirect.is_some() {
+            let redirect_to = Some(value.redirect.unwrap());
             redirect_kotakbas = Some(parse_rule_key(redirect_to.clone().unwrap())?);
 
             let fmt = redirect_to.unwrap();
@@ -142,12 +152,12 @@ impl Vanguard for VanguardService {
 
         let rule_key = parse_rule_key(key)?;
         
-        let rule_value = vanguard_common::maps2::RuleValue {
-            action: RuleAction::try_from(value.action).map_err(|_| Status::invalid_argument("invalid action"))?,
-            to: redirect_kotakbas,
+        let rule_value = RuleValue {
+            action: value.action,
+            redirect: redirect_kotakbas,
         };
         
-        maps2::RulesMap::add(&mut bpf, rule_key, rule_value).map_err(|_| Status::internal("ebpf map error"))?;
+        RulesMap::add(&mut bpf, rule_key, rule_value).map_err(|_| Status::internal("ebpf map error"))?;
         
         Ok(Response::new(()))
     }
@@ -172,7 +182,7 @@ impl Vanguard for VanguardService {
 
         let rule_key = parse_rule_key(key)?;
         
-        maps2::RulesMap::remove(&mut bpf, rule_key).map_err(|_| Status::internal("ebpf map error"))?;
+        RulesMap::remove(&mut bpf, rule_key).map_err(|_| Status::internal("ebpf map error"))?;
         
         Ok(Response::new(()))
     }
@@ -185,7 +195,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
         
-        let stats = GlobalStats::get_total(&mut bpf)
+        let stats = GlobalStatsMap::get_total(&mut bpf)
             .map_err(|_| Status::internal("ebpf map error"))?;
 
         let response = GetStatsResponse {
@@ -200,12 +210,12 @@ impl Vanguard for VanguardService {
     }
 }
 
-fn parse_rule_key(key: vanguard_api::RuleKey) -> Result<vanguard_common::maps2::RuleKey, Status> {
-    Ok(vanguard_common::maps2::RuleKey {
-        ip: parse_ip(key.ip).map_err(|_| Status::invalid_argument("invalid ip"))?,
+fn parse_rule_key(key: RuleKey) -> Result<RuleKey, Status> {
+    Ok(RuleKey {
+        ip: parse_ip(key.ip).map_err(|_| Status::invalid_argument("invalid ip"))?.as_str(),
         port: key.port.try_into().map_err(|_| Status::invalid_argument("port should be uint16"))?,
-        eth: parse_eth(key.eth).map_err(|_| Status::invalid_argument("invalid eth"))?,
-        proto: parse_proto(key.proto).map_err(|_| Status::invalid_argument("invalid proto"))?,
+        eth: parse_eth(key.eth).map_err(|_| Status::invalid_argument("invalid eth"))?.as_str(),
+        proto: parse_proto(key.proto).map_err(|_| Status::invalid_argument("invalid proto"))?.as_str(),
     })
 }
 

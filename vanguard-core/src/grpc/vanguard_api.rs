@@ -22,13 +22,6 @@ pub struct WhiteRequest {
     pub ip: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct Rule {
-    #[prost(message, optional, tag = "1")]
-    pub key: ::core::option::Option<RuleKey>,
-    #[prost(message, optional, tag = "2")]
-    pub value: ::core::option::Option<RuleValue>,
-}
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct RuleKey {
     #[prost(string, tag = "1")]
     pub ip: ::prost::alloc::string::String,
@@ -44,12 +37,14 @@ pub struct RuleValue {
     #[prost(uint32, tag = "1")]
     pub action: u32,
     #[prost(message, optional, tag = "2")]
-    pub redirect_to: ::core::option::Option<RuleKey>,
+    pub redirect: ::core::option::Option<RuleKey>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct AddRuleRequest {
     #[prost(message, optional, tag = "1")]
-    pub rule: ::core::option::Option<Rule>,
+    pub key: ::core::option::Option<RuleKey>,
+    #[prost(message, optional, tag = "2")]
+    pub value: ::core::option::Option<RuleValue>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct DelRuleRequest {

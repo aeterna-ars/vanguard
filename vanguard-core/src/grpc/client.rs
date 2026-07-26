@@ -2,13 +2,19 @@ use std::net::SocketAddr;
 
 use tonic::transport::Channel;
 
-use crate::{
-    erret_result::ErrResult,
-    maps::*,
-    parsetrash::AsStrExt
+use super::vanguard_api::{
+    self,
+    vanguard_client::*,
+    *,
 };
 
-use super::vanguard_api::{self, vanguard_client::*, *};
+use crate::maps::{
+    rules::*,
+    common::Parse,
+    stats::*,
+};
+
+use erret_result::*;
 
 pub struct VanguardGrpcClient {
     pub inner: VanguardClient<Channel>,
@@ -51,44 +57,29 @@ impl VanguardGrpcClient {
         Ok(())
     }
 
-    pub async fn add_rule(&mut self, rule: vanguard_common::maps2::Rule) -> Result<(), tonic::Status> {
-        let k = rule.key;
-        let v = rule.value;
-
-        let key = RuleKey {
-            ip: k.ip.as_str(),
-            port: k.port as u32,
-            eth: k.eth.as_str(),
-            proto: k.proto.as_str(),
+    pub async fn add_rule(&mut self, key: XdpRuleKey, value: XdpRuleValue) -> Result<(), tonic::Status> {
+        let k = RuleKey {
+            ip: key.ip.as_str(),
+            port: key.port as u32,
+            eth: key.eth.as_str(),
+            proto: key.proto.as_str(),
         };
 
-        let mut redirect_to: Option<RuleKey> = None;
-
-        if let Some(r) = v.to {
-            redirect_to = Some(RuleKey {
-                ip: r.ip.as_str(),
-                port: r.port as u32,
-                eth: r.eth.as_str(),
-                proto: r.proto.as_str(),
-            })
-        }
-
-        let value = RuleValue {
-            action: v.action as u32,
-            redirect_to,
+        let v = RuleValue {
+            action: value.action as u32,
+            redirect: Some(parse_rule_key(value.redirect)),
         };
 
-        let rule = Rule {
-            key: Some(key),
-            value: Some(value),
-        };
+        let request = tonic::Request::new(AddRuleRequest {
+            key: Some(k),
+            value: Some(v)
+        });
 
-        let request = tonic::Request::new(AddRuleRequest { rule: Some(rule) });
         self.inner.add_rule(request).await?;
         Ok(())
     }
 
-    pub async fn del_rule(&mut self, rule_key: vanguard_common::maps2::RuleKey) -> Result<(), tonic::Status> {
+    pub async fn del_rule(&mut self, rule_key: XdpRuleKey) -> Result<(), tonic::Status> {
         let rule = parse_rule_key(rule_key);
 
         let request = tonic::Request::new(DelRuleRequest { key: Some(rule) });
@@ -96,11 +87,11 @@ impl VanguardGrpcClient {
         Ok(())
     }
 
-    pub async fn get_stats(&mut self) -> Result<GlobalStats, tonic::Status> {
+    pub async fn get_stats(&mut self) -> Result<XdpGlobalStats, tonic::Status> {
         let request = tonic::Request::new(GetStatsRequest {});
         let response = self.inner.get_stats(request).await?.into_inner();
 
-        let stats = GlobalStats {
+        let stats = XdpGlobalStats {
             total: response.total,
             dropped: response.dropped,
             passed: response.passed,
@@ -112,7 +103,7 @@ impl VanguardGrpcClient {
     }
 }
 
-fn parse_rule_key(key: vanguard_common::maps2::RuleKey) -> RuleKey {
+fn parse_rule_key(key: XdpRuleKey) -> RuleKey {
     vanguard_api::RuleKey {
         ip: key.ip.as_str(),
         port: key.port as u32,

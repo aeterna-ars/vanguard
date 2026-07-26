@@ -1,6 +1,11 @@
 use std::net::SocketAddr;
 
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
+
+use super::maps::{
+    parse::*,
+    *,
+};
 
 use erret_result::*;
 
@@ -9,13 +14,13 @@ pub struct VanguardConfig {
     #[serde(default = "default_iface")]
     pub iface: String,
 
-    pub config: Config,
+    pub config: XdpConfig,
 
     #[serde(default)]
     pub blacklist: Vec<BlockConfig>,
 
     #[serde(default, deserialize_with = "deserialize_ip_list")]
-    pub whitelist: Vec<Ip>,
+    pub whitelist: Vec<XdpIp>,
 
     #[serde(default)]
     pub rules: Vec<Rule>,
@@ -35,9 +40,18 @@ impl VanguardConfig {
 fn default_iface() -> String { "eth0".to_string() }
 
 #[derive(Deserialize)]
+pub struct Rule {
+    #[serde(deserialize_with = "deserialize_rkey")]
+    key: XdpRuleKey,
+
+    #[serde(deserialize_with = "deserialize_rvalue")]
+    value: XdpRuleValue,
+}
+
+#[derive(Deserialize)]
 pub struct BlockConfig {
     #[serde(deserialize_with = "deserialize_ip")]
-    pub ip: Ip,
+    pub ip: XdpIp,
 
     #[serde(default)]
     pub blocked_until: u64,
@@ -47,7 +61,7 @@ pub struct BlockConfig {
 pub struct GrpcApi {
     pub up: bool,
 
-    #[serde(deserialize_with = "deserialize_addr")]
+    #[serde(deserialize_with = "deserialize_ip")]
     pub addr: SocketAddr,
 }
 
@@ -58,25 +72,6 @@ impl Default for GrpcApi {
             addr: "[::1]:8080".parse().unwrap(),
         }
     }
-}
-
-fn deserialize_ip_list<'de, D>(deserializer: D) -> Result<Vec<Ip>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let list = Vec::<String>::deserialize(deserializer)?;
-    list.iter()
-        .map(|s| parse_ip(s.to_string()).map_err(serde::de::Error::custom))
-        .collect()
-}
-
-fn deserialize_addr<'de, D>(deserializer: D) -> Result<SocketAddr, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    let addr: SocketAddr = s.parse().map_err(serde::de::Error::custom)?;
-    Ok(addr)
 }
 
 #[cfg(test)]
@@ -295,7 +290,7 @@ rules:
     fn test_deserialize_action_drop() {
         let action = deserialize_action("drop").unwrap();
         match action {
-            RuleAction::DROP => {}
+            XdpRuleAction::DROP => {}
             _ => panic!("Expected DROP"),
         }
     }
@@ -304,7 +299,7 @@ rules:
     fn test_deserialize_action_pass() {
         let action = deserialize_action("pass").unwrap();
         match action {
-            RuleAction::PASS => {}
+            XdpRuleAction::PASS => {}
             _ => panic!("Expected PASS"),
         }
     }
@@ -313,7 +308,7 @@ rules:
     fn test_deserialize_action_redirect() {
         let action = deserialize_action("redirect").unwrap();
         match action {
-            RuleAction::REDIRECT => {}
+            XdpRuleAction::REDIRECT => {}
             _ => panic!("Expected REDIRECT"),
         }
     }
@@ -322,7 +317,7 @@ rules:
     fn test_deserialize_action_abort() {
         let action = deserialize_action("abort").unwrap();
         match action {
-            RuleAction::ABORTED => {}
+            XdpRuleAction::ABORTED => {}
             _ => panic!("Expected ABORTED"),
         }
     }
@@ -331,7 +326,7 @@ rules:
     fn test_deserialize_action_tx() {
         let action = deserialize_action("tx").unwrap();
         match action {
-            RuleAction::TX => {}
+            XdpRuleAction::TX => {}
             _ => panic!("Expected TX"),
         }
     }
@@ -408,7 +403,7 @@ packet_rate_limit_per_sec: "not-a-number"
         assert!(result.is_err());
     }
 
-    fn deserialize_ip(input: &str) -> Result<Ip, String> {
+    fn deserialize_ip(input: &str) -> Result<XdpIp, String> {
         use serde::de::value::{Error as ValueError, StringDeserializer};
         let deserializer = StringDeserializer::<ValueError>::new(input.to_string());
         super::deserialize_ip(deserializer)
@@ -429,7 +424,7 @@ packet_rate_limit_per_sec: "not-a-number"
             .map_err(|e| e.to_string())
     }
 
-    fn deserialize_action(input: &str) -> Result<RuleAction, String> {
+    fn deserialize_action(input: &str) -> Result<XdpRuleAction, String> {
         use serde::de::value::{Error as ValueError, StringDeserializer};
         let deserializer = StringDeserializer::<ValueError>::new(input.to_string());
         super::deserialize_action(deserializer)

@@ -1749,6 +1749,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "vanguard-sockmap"
+version = "0.1.0"
+dependencies = [
+ "aya-ebpf",
+ "aya-log-ebpf",
+ "network-types",
+ "vanguard-core",
+]
+
+[[package]]
 name = "vanguard-xdp"
 version = "0.1.0"
 dependencies = [

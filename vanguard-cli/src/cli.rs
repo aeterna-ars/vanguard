@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use vanguard_common::{erret_result::*, maps::*, parse::AsStrExt};
+use vanguard_core::{erret_result::*, maps::*};
 use vanguard_grpc::{client::VanguardGrpcClient};
 
 #[derive(Parser)]
@@ -97,7 +97,7 @@ pub enum BlacklistCommands {
     #[command(about = "Add to XDP blacklist", long_about)]
     Block {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: String,
+        ip: XdpIp,
 
         #[arg(long)]
         until: u64,
@@ -106,7 +106,7 @@ pub enum BlacklistCommands {
     #[command(about = "Delete from XDP blacklist", long_about)]
     Del {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: String,
+        ip: XdpIp,
     },
 }
 impl BlacklistCommands {
@@ -141,13 +141,13 @@ pub enum WhitelistCommands {
     #[command(about = "Add to XDP whitelist", long_about)]
     White {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: String,
+        ip: XdpIp,
     },
 
     #[command(about = "Delete from XDP whitelist", long_about)]
     Del {
         #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
-        ip: String,
+        ip: XdpIp,
     },
 }
 impl WhitelistCommands {
@@ -185,15 +185,16 @@ pub enum RulesCommands {
     #[command(about = "XDP add rule", long_about)]
     Add {
         #[command(flatten)]
-        rule: ,
+        key: XdpRuleKey,
 
-        
+        #[command(flatten)]
+        value: XdpRuleValue,
     },
 
     #[command(about = "XDP delete rule", long_about)]
     Del {
         #[command(flatten)]
-        key: ,
+        key: XdpRuleKey,
     },
 }
 impl RulesCommands {
@@ -202,8 +203,8 @@ impl RulesCommands {
             Self::List => {
                 Self::list().await?;
             }
-            Self::Add { rule } => {
-                Self::add_rule(rule).await?;
+            Self::Add { key, value } => {
+                Self::add_rule(key, value).await?;
             }
             Self::Del { key } => {
                 Self::del_rule(key).await?;
@@ -219,13 +220,13 @@ impl RulesCommands {
         Ok(())
     }
 
-    async fn add_rule(rule: vanguard_common::maps2::Rule) -> ErrResult<()> {
+    async fn add_rule(key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
         grpc.add_rule(rule).await?;
         Ok(())
     }
 
-    async fn del_rule(key: vanguard_common::maps2::RuleKey) -> ErrResult<()> {
+    async fn del_rule(key: XdpRuleKey) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
         grpc.del_rule(key).await?;
         Ok(())

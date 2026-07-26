@@ -4,9 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-aya = { workspace = true }
-clap = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
+aya = { workspace = true, optional = true }
+clap = { workspace = true, features = ["derive"], optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
 serde_yaml = { workspace = true }
 network-types = { workspace = true }
 erret-macro = { workspace = true }
@@ -22,4 +22,5 @@ prost = { workspace = true }
 tonic-prost-build = "0.14.6"
 
 [features]
-default = []
+default = ["userspace"]
+userspace = ["dep:aya", "dep:clap", "dep:serde"]

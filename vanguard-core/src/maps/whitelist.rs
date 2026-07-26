@@ -1,4 +1,6 @@
 use super::common::*;
+use erret_result::ErrResult;
+use super::ip::XdpIp;
 
 pub struct WhitelistMap;
 impl WhitelistMap {
@@ -6,14 +8,14 @@ impl WhitelistMap {
         get_map!(bpf, "WHITELIST", HashMap, HashMap<MapData, XdpIp, u8>)
     }
 
-    fn is_white(map: &HashMap<MapData, u128, u8>, ip: u128) -> bool {
+    fn is_white(map: &HashMap<MapData, XdpIp, u8>, ip: XdpIp) -> bool {
         match map.get(&ip, 0) {
             Ok(_) => true,
             Err(_) => false,
         }
     }
 
-    pub fn insert(bpf: &mut Ebpf, ip: u128) -> ErrResult<()> {
+    pub fn insert(bpf: &mut Ebpf, ip: XdpIp) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
 
         if Self::is_white(&map, ip) {
@@ -25,7 +27,7 @@ impl WhitelistMap {
         Ok(())
     }
 
-    pub fn remove(bpf: &mut Ebpf, ip: u128) -> ErrResult<()> {
+    pub fn remove(bpf: &mut Ebpf, ip: XdpIp) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
 
         if !Self::is_white(&map, ip) {

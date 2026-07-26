@@ -3,7 +3,7 @@ use aya_ebpf::{
     maps::{HashMap, LruPerCpuHashMap, Array, PerCpuArray},
 };
 
-pub use vanguard_common::maps2::xdp_maps::*;
+pub use vanguard_core::maps::*;
 
 #[map]
 pub static CONFIG: Array<XdpConfig> = Array::<XdpConfig>::with_max_entries(1, 0);

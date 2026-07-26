@@ -1,8 +1,9 @@
 [workspace]
 members = [
-    "vanguard-xdp",
-    "vanguard-daemon",
     "vanguard-core",
+    "vanguard-xdp",
+    "vanguard-sockmap",
+    "vanguard-daemon",
     "vanguard-cli",
 ]
 resolver = "3"

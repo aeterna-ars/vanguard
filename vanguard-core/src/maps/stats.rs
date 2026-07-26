@@ -1,4 +1,6 @@
 use super::common::*;
+use erret_result::ErrResult;
+use crate::error::VanguardError;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -9,6 +11,7 @@ pub struct XdpGlobalStats {
     pub tx: u64,
     pub redirected: u64,
 }
+#[cfg(feature = "userspace")]
 unsafe impl Pod for XdpGlobalStats {}
 
 pub struct GlobalStatsMap;

@@ -31,11 +31,6 @@ message WhiteRequest {
   string ip = 1;
 }
 
-message Rule {
-  RuleKey key = 1;
-  RuleValue value = 2;
-}
-
 message RuleKey {
   string ip = 1;
   uint32 port = 2;
@@ -45,11 +40,12 @@ message RuleKey {
 
 message RuleValue {
   uint32 action = 1;
-  RuleKey redirect_to = 2;
+  RuleKey redirect = 2;
 }
 
 message AddRuleRequest {
-  Rule rule = 1;
+  RuleKey key = 1;
+  RuleValue value = 2;
 }
 
 message DelRuleRequest {

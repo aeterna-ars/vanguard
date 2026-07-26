@@ -1,4 +1,8 @@
 use super::common::*;
+use erret_result::ErrResult;
+use super::{
+    ip::XdpIp,
+};
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -8,14 +12,16 @@ pub struct XdpRuleKey {
     pub eth: EtherType,
     pub proto: IpProto,
 }
+#[cfg(feature = "userspace")]
 unsafe impl Pod for XdpRuleKey {}
 
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct XdpRuleValue {
     pub action: XdpRuleAction,
-    pub to: XdpRuleKey,
+    pub redirect: XdpRuleKey,
 }
+#[cfg(feature = "userspace")]
 unsafe impl Pod for XdpRuleValue {}
 
 #[repr(C)]
@@ -34,7 +40,7 @@ impl RulesMap {
         get_map!(bpf, "RULES", HashMap, HashMap<MapData, XdpRuleKey, XdpRuleValue>)
     }
 
-    pub fn add(bpf: &mut Ebpf, key: RuleKey, value: RuleValue) -> ErrResult<()> {
+    pub fn add(bpf: &mut Ebpf, key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
 
         let key = XdpRuleKey::from(key);
@@ -44,7 +50,7 @@ impl RulesMap {
         Ok(())
     }
 
-    pub fn remove(bpf: &mut Ebpf, key: RuleKey) -> ErrResult<()> {
+    pub fn remove(bpf: &mut Ebpf, key: XdpRuleKey) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
 
         let key = XdpRuleKey::from(key);
