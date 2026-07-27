@@ -4,20 +4,28 @@ use tokio::sync::Mutex;
 use tokio::signal::unix::*;
 
 use aya::{
-    Ebpf, EbpfLoader, VerifierLogLevel, programs::{Xdp, XdpMode, xdp::XdpLinkId},
+    Ebpf,
+    EbpfLoader,
+    VerifierLogLevel,
+    programs::{
+        Xdp,
+        XdpMode,
+        xdp::XdpLinkId
+    },
 };
 use aya_log::EbpfLogger;
 
 use libsystemd::daemon::{self, *};
 
-use vanguard_common::{
-    brevno::{self, *}, config::{
+use vanguard_core::{
+    config::{
         GrpcApi,
         VanguardConfig
-    }, erret_result::*, error::VanguardError, maps2,
+    },
+    erret_result::*,
+    error::VanguardError,
+    maps,
 };
-
-use vanguard_grpc::server::start_grpc_server;
 
 struct XdpDaemon {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -85,18 +93,18 @@ impl XdpDaemon {
     async fn apply_cfg(&mut self, config: VanguardConfig) -> ErrResult<()> {
         let mut bpf = self.bpf.lock().await;
 
-        maps2::ConfigMap::write(&mut bpf, config.config)?;
+        maps::config::ConfigMap::write(&mut bpf, config.config)?;
 
         for ip in config.blacklist {
-            maps2::BlocklistMap::block(&mut bpf, ip.ip.0, ip.blocked_until)?;
+            maps::blacklist::BlocklistMap::block(&mut bpf, ip.ip.0, ip.blocked_until)?;
         }
 
         for ip in config.whitelist {
-            maps2::WhitelistMap::insert(&mut bpf, ip.0)?;
+            maps::whitelist::WhitelistMap::insert(&mut bpf, ip.0)?;
         }
 
         for rule in config.rules {
-            maps2::RulesMap::add(&mut bpf, rule.key, rule.value)?;
+            maps::rules::RulesMap::add(&mut bpf, rule.key, rule.value)?;
         }
 
         self.grpc(&config.grpc).await?;

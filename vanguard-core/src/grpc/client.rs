@@ -33,31 +33,31 @@ impl VanguardGrpcClient {
         Ok(Self { inner })
     }
 
-    pub async fn change_rate_limit(&mut self, limit: u32) -> Result<(), tonic::Status> {
+    pub async fn change_rate_limit(&mut self, limit: u32) -> ErrResult<()> {
         let request = tonic::Request::new(ChangeRateLimitRequest { limit });
         self.inner.change_rate_limit(request).await?;
         Ok(())
     }
 
-    pub async fn change_block_time(&mut self, time: u64) -> Result<(), tonic::Status> {
+    pub async fn change_block_time(&mut self, time: u64) -> ErrResult<()> {
         let request = tonic::Request::new(ChangeBlockTimeRequest { time });
         self.inner.change_block_time(request).await?;
         Ok(())
     }
 
-    pub async fn block(&mut self, ip: String, block_until: u64) -> Result<(), tonic::Status> {
+    pub async fn block(&mut self, ip: String, block_until: u64) -> ErrResult<()> {
         let request = tonic::Request::new(BlockRequest { ip, block_until });
         self.inner.block(request).await?;
         Ok(())
     }
 
-    pub async fn white(&mut self, ip: String) -> Result<(), tonic::Status> {
+    pub async fn white(&mut self, ip: String) -> ErrResult<()> {
         let request = tonic::Request::new(WhiteRequest { ip });
         self.inner.white(request).await?;
         Ok(())
     }
 
-    pub async fn add_rule(&mut self, key: XdpRuleKey, value: XdpRuleValue) -> Result<(), tonic::Status> {
+    pub async fn add_rule(&mut self, key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
         let k = RuleKey {
             ip: key.ip.as_str(),
             port: key.port as u32,
@@ -66,7 +66,7 @@ impl VanguardGrpcClient {
         };
 
         let v = RuleValue {
-            action: value.action as u32,
+            action: value.action.as_str(),
             redirect: Some(parse_rule_key(value.redirect)),
         };
 
@@ -79,15 +79,14 @@ impl VanguardGrpcClient {
         Ok(())
     }
 
-    pub async fn del_rule(&mut self, rule_key: XdpRuleKey) -> Result<(), tonic::Status> {
+    pub async fn del_rule(&mut self, rule_key: XdpRuleKey) -> ErrResult<()> {
         let rule = parse_rule_key(rule_key);
-
         let request = tonic::Request::new(DelRuleRequest { key: Some(rule) });
         self.inner.del_rule(request).await?;
         Ok(())
     }
 
-    pub async fn get_stats(&mut self) -> Result<XdpGlobalStats, tonic::Status> {
+    pub async fn get_stats(&mut self) -> ErrResult<XdpGlobalStats> {
         let request = tonic::Request::new(GetStatsRequest {});
         let response = self.inner.get_stats(request).await?.into_inner();
 

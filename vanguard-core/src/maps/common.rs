@@ -1,8 +1,4 @@
 use crate::error::VanguardError;
-use super::{
-    ip::XdpIp,
-    rules::XdpRuleAction,
-};
 use erret_result::*;
 pub(super) use get_map::get_map;
 pub use network_types::{
@@ -37,37 +33,6 @@ mod get_map {
 pub trait Parse: Sized {
     fn as_str(&self) -> String;
     fn to_type(s: String) -> ErrResult<Self>;
-}
-
-impl Parse for XdpIp {
-    fn as_str(&self) -> String {
-        let bytes = self.0;
-        
-        let is_v4 = bytes[10] == 0xFF 
-            && bytes[11] == 0xFF 
-            && bytes[0..10].iter().all(|&b| b == 0);
-
-        if is_v4 {
-            format!("{}.{}.{}.{}", bytes[12], bytes[13], bytes[14], bytes[15])
-        } else {
-            use std::net::Ipv6Addr;
-            let ipv6 = Ipv6Addr::from(bytes);
-            ipv6.to_string()
-        }
-    }
-
-    fn to_type(s: String) -> ErrResult<Self> {
-        use std::net::IpAddr;
-        use std::str::FromStr;
-
-        let ip = IpAddr::from_str(s.trim())
-            .map_err(|_| VanguardError::Io("invalid IP format"))?;
-
-        match ip {
-            IpAddr::V4(v4) => Ok(XdpIp::from_v4(v4.octets())),
-            IpAddr::V6(v6) => Ok(XdpIp::from_v6(v6.octets())),
-        }
-    }
 }
 
 impl Parse for EtherType {
@@ -418,73 +383,5 @@ impl Parse for IpProto {
             "reserved" => Ok(IpProto::Reserved),
             _ => Err(VanguardError::Io("unknown ip protocol").into()),
         }
-    }
-}
-
-impl Parse for XdpRuleAction {
-    fn as_str(&self) -> String {
-        match self {
-            Self::ABORTED => "abort".to_string(),
-            Self::DROP => "drop".to_string(),
-            Self::PASS => "pass".to_string(),
-            Self::TX => "tx".to_string(),
-            Self::REDIRECT => "redirect".to_string(),
-        }
-    }
-
-    fn to_type(s: String) -> ErrResult<Self> {
-        match s.to_lowercase().trim() {
-            "abort" => Ok(Self::ABORTED),
-            "drop" => Ok(Self::DROP),
-            "pass" => Ok(Self::PASS),
-            "tx" => Ok(Self::TX),
-            "redirect" => Ok(Self::REDIRECT),
-            _ => Err(VanguardError::Io("unknown action").into())
-        }
-    }
-}
-
-#[cfg(feature = "userspace")]
-pub mod parse {
-    use super::*;
-    use serde::{Deserialize, Deserializer, de::Error};
-
-    pub fn parse_eth(s: String) -> std::result::Result<EtherType, std::io::Error> {
-        EtherType::to_type(s)
-            .map_err(|e| std::io::Error::other(e.to_string()))
-    }
-    
-    pub fn parse_proto(s: String) -> std::result::Result<IpProto, std::io::Error> {
-        IpProto::to_type(s)
-            .map_err(|e| std::io::Error::other(e.to_string()))
-    }
-
-    pub fn parse_action(s: String) -> std::result::Result<XdpRuleAction, std::io::Error> {
-        XdpRuleAction::to_type(s)
-            .map_err(|e| std::io::Error::other(e.to_string()))
-    }
-
-    pub fn deserialize_eth<'de, D>(deserializer: D) -> Result<EtherType, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        Ok(parse_eth(s).map_err(|e| D::Error::custom(format!("{e}")))?)
-    }
-    
-    pub fn deserialize_proto<'de, D>(deserializer: D) -> Result<IpProto, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        Ok(parse_proto(s).map_err(|e| D::Error::custom(format!("{e}")))?)
-    }
-    
-    pub fn deserialize_action<'de, D>(deserializer: D) -> Result<XdpRuleAction, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        Ok(parse_action(s).map_err(|e| D::Error::custom(format!("{e}")))?)
     }
 }

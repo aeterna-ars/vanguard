@@ -1,6 +1,15 @@
-use clap::{Parser, Subcommand};
-use vanguard_core::{erret_result::*, maps::*};
-use vanguard_grpc::{client::VanguardGrpcClient};
+use clap::{
+    Parser,
+    Subcommand,
+};
+use vanguard_core::{
+    erret_result::*,
+    maps::{
+        *,
+        ip::*,
+    },
+    grpc::client::*,
+};
 
 #[derive(Parser)]
 #[command(name = "vanguard")]
@@ -96,16 +105,13 @@ impl ListsCommands {
 pub enum BlacklistCommands {
     #[command(about = "Add to XDP blacklist", long_about)]
     Block {
-        #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
         ip: XdpIp,
 
-        #[arg(long)]
         until: u64,
     },
 
     #[command(about = "Delete from XDP blacklist", long_about)]
     Del {
-        #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
         ip: XdpIp,
     },
 }
@@ -140,13 +146,11 @@ impl BlacklistCommands {
 pub enum WhitelistCommands {
     #[command(about = "Add to XDP whitelist", long_about)]
     White {
-        #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
         ip: XdpIp,
     },
 
     #[command(about = "Delete from XDP whitelist", long_about)]
     Del {
-        #[arg(long, value_parser = vanguard_common::parse::cli::parse_ip_arg)]
         ip: XdpIp,
     },
 }
@@ -184,16 +188,13 @@ pub enum RulesCommands {
 
     #[command(about = "XDP add rule", long_about)]
     Add {
-        #[command(flatten)]
         key: XdpRuleKey,
 
-        #[command(flatten)]
         value: XdpRuleValue,
     },
 
     #[command(about = "XDP delete rule", long_about)]
     Del {
-        #[command(flatten)]
         key: XdpRuleKey,
     },
 }
@@ -222,7 +223,7 @@ impl RulesCommands {
 
     async fn add_rule(key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
-        grpc.add_rule(rule).await?;
+        grpc.add_rule(key, value).await?;
         Ok(())
     }
 

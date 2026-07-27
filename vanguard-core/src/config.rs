@@ -1,19 +1,20 @@
 use std::net::SocketAddr;
-
 use serde::Deserialize;
-
+use erret_result::*;
 use super::maps::{
-    parse::*,
-    *,
+    config::*,
+    ip::*,
+    rules::*,
 };
 
-use erret_result::*;
+use self::serialize::*;
 
 #[derive(Deserialize)]
 pub struct VanguardConfig {
     #[serde(default = "default_iface")]
     pub iface: String,
 
+    #[serde(deserialize_with = "deserialize_config")]
     pub config: XdpConfig,
 
     #[serde(default)]
@@ -40,15 +41,6 @@ impl VanguardConfig {
 fn default_iface() -> String { "eth0".to_string() }
 
 #[derive(Deserialize)]
-pub struct Rule {
-    #[serde(deserialize_with = "deserialize_rkey")]
-    key: XdpRuleKey,
-
-    #[serde(deserialize_with = "deserialize_rvalue")]
-    value: XdpRuleValue,
-}
-
-#[derive(Deserialize)]
 pub struct BlockConfig {
     #[serde(deserialize_with = "deserialize_ip")]
     pub ip: XdpIp,
@@ -58,10 +50,17 @@ pub struct BlockConfig {
 }
 
 #[derive(Deserialize)]
+pub struct Rule {
+    #[serde(deserialize_with = "deserialize_rkey")]
+    pub key: XdpRuleKey,
+
+    #[serde(deserialize_with = "deserialize_rval")]
+    pub value: XdpRuleValue,
+}
+
+#[derive(Deserialize)]
 pub struct GrpcApi {
     pub up: bool,
-
-    #[serde(deserialize_with = "deserialize_ip")]
     pub addr: SocketAddr,
 }
 
@@ -74,13 +73,114 @@ impl Default for GrpcApi {
     }
 }
 
+mod serialize {
+    use crate::maps::*;
+    use super::*;
+    use serde::{Deserialize, Deserializer, de::Error};
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct XdpConfigWrapper {
+        pub rate_limit: u32,
+        pub block_time: u64,
+    }
+
+    impl TryFrom<XdpConfigWrapper> for XdpConfig {
+        type Error = ErrRet;
+
+        fn try_from(wrapper: XdpConfigWrapper) -> Result<Self, Self::Error> {
+            Ok(XdpConfig {
+                rate_limit: wrapper.rate_limit,
+                block_time: wrapper.block_time,
+            })
+        }
+    }
+
+    pub fn deserialize_config<'de, D>(deserializer: D) -> Result<XdpConfig, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let wrapper: XdpConfigWrapper = Deserialize::deserialize(deserializer)?;
+        Ok(wrapper.try_into().map_err(|e| D::Error::custom(format!("{e}")))?)
+    }
+
+    #[derive(Clone, Deserialize)]
+    pub struct XdpRuleKeyWrapper {
+        pub ip: String,
+        pub port: u16,
+        pub eth: String,
+        pub proto: String,
+    }
+
+    impl TryFrom<XdpRuleKeyWrapper> for XdpRuleKey {
+        type Error = ErrRet;
+
+        fn try_from(w: XdpRuleKeyWrapper) -> Result<Self, Self::Error> {
+            Ok(XdpRuleKey {
+                ip: XdpIp::to_type(w.ip)?,
+                port: w.port,
+                eth: EtherType::to_type(w.eth)?,
+                proto: IpProto::to_type(w.proto)?,
+            })
+        }
+    }
+
+    pub fn deserialize_rkey<'de, D>(deserializer: D) -> Result<XdpRuleKey, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let wrapper = XdpRuleKeyWrapper::deserialize(deserializer)?;
+        Ok(wrapper.try_into().map_err(|e| D::Error::custom(format!("{e}")))?)
+    }
+
+    #[derive(Clone, Deserialize)]
+    pub struct XdpRuleValueWrapper {
+        pub action: String,
+        pub redirect: XdpRuleKeyWrapper,
+    }
+
+    impl TryFrom<XdpRuleValueWrapper> for XdpRuleValue {
+        type Error = ErrRet;
+
+        fn try_from(w: XdpRuleValueWrapper) -> Result<Self, Self::Error> {
+            let redirect_key: XdpRuleKey = w.redirect.try_into()?;
+            
+            Ok(XdpRuleValue {
+                action: XdpRuleAction::to_type(w.action)?,
+                redirect: redirect_key,
+            })
+        }
+    }
+
+    pub fn deserialize_rval<'de, D>(deserializer: D) -> Result<XdpRuleValue, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let wrapper = XdpRuleValueWrapper::deserialize(deserializer)?;
+        Ok(wrapper.try_into().map_err(|e| D::Error::custom(format!("{e}")))?)
+    }
+
+    pub fn deserialize_ip<'de, D>(deserializer: D) -> Result<XdpIp, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = Deserialize::deserialize(deserializer)?;
+        XdpIp::to_type(s).map_err(D::Error::custom)
+    }
+
+    pub fn deserialize_ip_list<'de, D>(deserializer: D) -> Result<Vec<XdpIp>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let ips: Vec<String> = Deserialize::deserialize(deserializer)?;
+        ips.into_iter()
+            .map(|s| XdpIp::to_type(s).map_err(D::Error::custom))
+            .collect()
+    }
+}
+
 #[cfg(test)]
 mod test_cfg {
     use super::*;
-    use network_types::{
-        eth::EtherType,
-        ip::IpProto,
-    };
 
     #[test]
     fn test_parse_from_file() {
@@ -161,183 +261,6 @@ rules:
     }
 
     #[test]
-    fn test_deserialize_ip_v4() {
-        let ip = deserialize_ip("192.168.1.1").unwrap();
-        assert_eq!(
-            ip.0,
-            u128::from_be_bytes([
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0xff, 0xff,
-                192, 168, 1, 1,
-            ])
-        );
-    }
-
-    #[test]
-    fn test_deserialize_ip_v6() {
-        let ip = deserialize_ip("2001:db8::1").unwrap();
-        let expected = u128::from_be_bytes([
-            0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 1,
-        ]);
-        assert_eq!(ip.0, expected);
-    }
-
-    #[test]
-    fn test_deserialize_ip_with_cidr() {
-        let ip = deserialize_ip("192.168.1.0/24").unwrap();
-        assert_eq!(
-            ip.0,
-            u128::from_be_bytes([
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0xff, 0xff,
-                192, 168, 1, 0,
-            ])
-        );
-    }
-
-    #[test]
-    fn test_deserialize_ip_invalid() {
-        let result = deserialize_ip("not-an-ip");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_deserialize_eth_ipv4() {
-        let eth = deserialize_eth("ipv4").unwrap();
-        match eth {
-            EtherType::Ipv4 => {}
-            _ => panic!("Expected Ipv4"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_eth_ipv6() {
-        let eth = deserialize_eth("ipv6").unwrap();
-        match eth {
-            EtherType::Ipv6 => {}
-            _ => panic!("Expected Ipv6"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_eth_arp() {
-        let eth = deserialize_eth("arp").unwrap();
-        match eth {
-            EtherType::Arp => {}
-            _ => panic!("Expected Arp"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_eth_invalid() {
-        let result = deserialize_eth("unknown");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_deserialize_proto_tcp() {
-        let proto = deserialize_proto("tcp").unwrap();
-        match proto {
-            IpProto::Tcp => {}
-            _ => panic!("Expected Tcp"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_proto_udp() {
-        let proto = deserialize_proto("udp").unwrap();
-        match proto {
-            IpProto::Udp => {}
-            _ => panic!("Expected Udp"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_proto_icmp() {
-        let proto = deserialize_proto("icmp").unwrap();
-        match proto {
-            IpProto::Icmp => {}
-            _ => panic!("Expected Icmp"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_proto_icmpv6() {
-        let proto = deserialize_proto("icmpv6").unwrap();
-        match proto {
-            IpProto::Ipv6Icmp => {}
-            _ => panic!("Expected Ipv6Icmp"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_proto_any() {
-        let proto = deserialize_proto("any").unwrap();
-        match proto {
-            IpProto::Larp => {} // Unsupported
-            _ => panic!("Expected Larp (unsupported)"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_proto_invalid() {
-        let result = deserialize_proto("unknown");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_deserialize_action_drop() {
-        let action = deserialize_action("drop").unwrap();
-        match action {
-            XdpRuleAction::DROP => {}
-            _ => panic!("Expected DROP"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_action_pass() {
-        let action = deserialize_action("pass").unwrap();
-        match action {
-            XdpRuleAction::PASS => {}
-            _ => panic!("Expected PASS"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_action_redirect() {
-        let action = deserialize_action("redirect").unwrap();
-        match action {
-            XdpRuleAction::REDIRECT => {}
-            _ => panic!("Expected REDIRECT"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_action_abort() {
-        let action = deserialize_action("abort").unwrap();
-        match action {
-            XdpRuleAction::ABORTED => {}
-            _ => panic!("Expected ABORTED"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_action_tx() {
-        let action = deserialize_action("tx").unwrap();
-        match action {
-            XdpRuleAction::TX => {}
-            _ => panic!("Expected TX"),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_action_invalid() {
-        let result = deserialize_action("unknown");
-        assert!(result.is_err());
-    }
-
-    #[test]
     fn test_load_config_from_file() {
         let yaml = r#"
 config:
@@ -401,33 +324,5 @@ packet_rate_limit_per_sec: "not-a-number"
 
         let result: Result<VanguardConfig, _> = serde_yaml::from_str(yaml);
         assert!(result.is_err());
-    }
-
-    fn deserialize_ip(input: &str) -> Result<XdpIp, String> {
-        use serde::de::value::{Error as ValueError, StringDeserializer};
-        let deserializer = StringDeserializer::<ValueError>::new(input.to_string());
-        super::deserialize_ip(deserializer)
-            .map_err(|e| e.to_string())
-    }
-
-    fn deserialize_eth(input: &str) -> Result<EtherType, String> {
-        use serde::de::value::{Error as ValueError, StringDeserializer};
-        let deserializer = StringDeserializer::<ValueError>::new(input.to_string());
-        super::deserialize_eth(deserializer)
-            .map_err(|e| e.to_string())
-    }
-
-    fn deserialize_proto(input: &str) -> Result<IpProto, String> {
-        use serde::de::value::{Error as ValueError, StringDeserializer};
-        let deserializer = StringDeserializer::<ValueError>::new(input.to_string());
-        super::deserialize_proto(deserializer)
-            .map_err(|e| e.to_string())
-    }
-
-    fn deserialize_action(input: &str) -> Result<XdpRuleAction, String> {
-        use serde::de::value::{Error as ValueError, StringDeserializer};
-        let deserializer = StringDeserializer::<ValueError>::new(input.to_string());
-        super::deserialize_action(deserializer)
-            .map_err(|e| e.to_string())
     }
 }

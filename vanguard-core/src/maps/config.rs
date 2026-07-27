@@ -3,7 +3,6 @@ use erret_result::ErrResult;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-#[cfg_attr(feature = "userspace", derive(clap::Args, serde::Serialize, serde::Deserialize))]
 pub struct XdpConfig {
     pub rate_limit: u32,
     pub block_time: u64,

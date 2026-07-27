@@ -76,7 +76,7 @@ INSTALL_PATH="/usr/local/bin/vanguard-cli"
 
 echo "Copying bin to $INSTALL_PATH..."
 if [ "$EUID" -ne 0 ]; then
-    echo "Need sudo:"
+    echo "Need sudo for: cp "$BINARY_PATH" "$INSTALL_PATH""
     sudo cp "$BINARY_PATH" "$INSTALL_PATH"
 else
     cp "$BINARY_PATH" "$INSTALL_PATH"

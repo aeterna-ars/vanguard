@@ -1,5 +1,6 @@
 use super::common::*;
 use erret_result::ErrResult;
+use crate::error::*;
 use super::{
     ip::XdpIp,
 };
@@ -32,6 +33,30 @@ pub enum XdpRuleAction {
     PASS = 2,
     TX = 3,
     REDIRECT = 4,
+}
+
+#[cfg(feature = "userspace")]
+impl Parse for XdpRuleAction {
+    fn as_str(&self) -> String {
+        match self {
+            Self::ABORTED => "abort".to_string(),
+            Self::DROP => "drop".to_string(),
+            Self::PASS => "pass".to_string(),
+            Self::TX => "tx".to_string(),
+            Self::REDIRECT => "redirect".to_string(),
+        }
+    }
+
+    fn to_type(s: String) -> ErrResult<Self> {
+        match s.to_lowercase().trim() {
+            "abort" => Ok(Self::ABORTED),
+            "drop" => Ok(Self::DROP),
+            "pass" => Ok(Self::PASS),
+            "tx" => Ok(Self::TX),
+            "redirect" => Ok(Self::REDIRECT),
+            _ => Err(VanguardError::Io("unknown action").into())
+        }
+    }
 }
 
 pub struct RulesMap;

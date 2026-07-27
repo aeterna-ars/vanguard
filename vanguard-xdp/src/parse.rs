@@ -113,6 +113,6 @@ fn try_filter_port(ctx: &XdpContext, offset: usize, protocol: IpProto) -> Result
 }
 
 #[inline(always)]
-fn tx(eth: *mut EthHdr, ip: *mut Ipv4Hdr, target: &XdpRuleKey) {
+fn change_headers(eth: *mut EthHdr, ip: *mut Ipv4Hdr, target: &XdpRuleKey) {
 
 }

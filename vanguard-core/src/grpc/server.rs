@@ -10,10 +10,7 @@ use super::vanguard_api::{vanguard_server::*, *};
 
 use crate::maps::{
     rules::*,
-    common::{
-        parse::*,
-        *,
-    },
+    common::*,
     stats::*,
     config::*,
     ip::*,
@@ -84,8 +81,8 @@ impl Vanguard for VanguardService {
         let req = request.into_inner();
         info!("Blocklist request: {}, until {}", req.ip, req.block_until);
 
-        let ip = parse_ip(req.ip)
-            .map_err(|e| Status::invalid_argument(format!("Incorrect IP: {e}")))?.0;
+        let ip = XdpIp::to_type(req.ip)
+            .map_err(|e| Status::invalid_argument(format!("Incorrect IP: {e}")))?;
 
         let mut bpf = self.bpf.lock().await;
 
@@ -102,8 +99,8 @@ impl Vanguard for VanguardService {
         let req = request.into_inner();
         info!("Whitelist request: {}", req.ip);
 
-        let ip = parse_ip(req.ip)
-            .map_err(|e| Status::invalid_argument(format!("Incorrect IP: {e}")))?.0;
+        let ip = XdpIp::to_type(req.ip)
+            .map_err(|e| Status::invalid_argument(format!("Incorrect IP: {e}")))?;
 
         let mut bpf = self.bpf.lock().await;
 
@@ -132,16 +129,17 @@ impl Vanguard for VanguardService {
         let value = v.unwrap();
         let action = value.action;
 
-        let mut redirect_kotakbas: Option<RuleKey> = None;
+        let mut redirect: XdpRuleKey = unsafe { core::mem::zeroed() };
 
         let mut redirect_fmt = String::new();
-        if value.redirect.is_some() {
-            let redirect_to = Some(value.redirect.unwrap());
-            redirect_kotakbas = Some(parse_rule_key(redirect_to.clone().unwrap())?);
-
-            let fmt = redirect_to.unwrap();
-            redirect_fmt = format!(" -> {}:{} {} {}", fmt.ip, fmt.port, fmt.eth, fmt.proto)
-        };
+        if action == "redirect" {
+            if let Some(to) = value.redirect {
+                redirect_fmt = format!(" -> {}:{} {} {}", to.ip, to.port, to.eth, to.proto);
+                redirect = parse_rule_key(to)?;
+            } else {
+                return Err(Status::invalid_argument("REDIRECT action should have redirect field"));
+            }
+        }
         
         info!(
             "Add rule request: {}:{} {} -> {}{}",
@@ -152,12 +150,12 @@ impl Vanguard for VanguardService {
 
         let rule_key = parse_rule_key(key)?;
         
-        let rule_value = RuleValue {
-            action: value.action,
-            redirect: redirect_kotakbas,
+        let rule_value = XdpRuleValue {
+            action: XdpRuleAction::to_type(action).map_err(|e| Status::internal(format!("{e}")))?,
+            redirect,
         };
         
-        RulesMap::add(&mut bpf, rule_key, rule_value).map_err(|_| Status::internal("ebpf map error"))?;
+        RulesMap::add(&mut bpf, rule_key, rule_value).map_err(|e| Status::internal(format!("{e}")))?;
         
         Ok(Response::new(()))
     }
@@ -182,7 +180,7 @@ impl Vanguard for VanguardService {
 
         let rule_key = parse_rule_key(key)?;
         
-        RulesMap::remove(&mut bpf, rule_key).map_err(|_| Status::internal("ebpf map error"))?;
+        RulesMap::remove(&mut bpf, rule_key).map_err(|e| Status::internal(format!("{e}")))?;
         
         Ok(Response::new(()))
     }
@@ -210,12 +208,12 @@ impl Vanguard for VanguardService {
     }
 }
 
-fn parse_rule_key(key: RuleKey) -> Result<RuleKey, Status> {
-    Ok(RuleKey {
-        ip: parse_ip(key.ip).map_err(|_| Status::invalid_argument("invalid ip"))?.as_str(),
-        port: key.port.try_into().map_err(|_| Status::invalid_argument("port should be uint16"))?,
-        eth: parse_eth(key.eth).map_err(|_| Status::invalid_argument("invalid eth"))?.as_str(),
-        proto: parse_proto(key.proto).map_err(|_| Status::invalid_argument("invalid proto"))?.as_str(),
+fn parse_rule_key(key: RuleKey) -> Result<XdpRuleKey, Status> {
+    Ok(XdpRuleKey {
+        ip: XdpIp::to_type(key.ip).map_err(|e| Status::invalid_argument(format!("{e}")))?,
+        port: u16::try_from(key.port).map_err(|e| Status::invalid_argument(format!("{e}")))?,
+        eth: EtherType::to_type(key.eth).map_err(|e| Status::invalid_argument(format!("{e}")))?,
+        proto: IpProto::to_type(key.proto).map_err(|e| Status::invalid_argument(format!("{e}")))?,
     })
 }
 

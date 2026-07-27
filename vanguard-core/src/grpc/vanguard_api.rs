@@ -34,8 +34,8 @@ pub struct RuleKey {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct RuleValue {
-    #[prost(uint32, tag = "1")]
-    pub action: u32,
+    #[prost(string, tag = "1")]
+    pub action: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub redirect: ::core::option::Option<RuleKey>,
 }

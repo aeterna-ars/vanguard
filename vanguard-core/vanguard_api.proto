@@ -39,7 +39,7 @@ message RuleKey {
 }
 
 message RuleValue {
-  uint32 action = 1;
+  string action = 1;
   RuleKey redirect = 2;
 }
 
