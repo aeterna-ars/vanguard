@@ -27,7 +27,7 @@ In the spirit of projects like **Katran**, Vanguard focuses on:
 
 ## Project Status
 
-🚧 **Work in Progress (WIP)** 🚧
+**Work in Progress (WIP)**
 
 Vanguard is under active development. The core XDP filtering and rate-limiting functionality is being implemented. The goal is to create a production-ready tool that can be used as a foundation for high-performance network services.
 
