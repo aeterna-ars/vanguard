@@ -297,7 +297,7 @@ dependencies = [
 [[package]]
 name = "brevno"
 version = "0.1.0"
-source = "git+https://github.com/ecdhe-x25519/brevno#41e155291f4d09be19dad5380901e86ba2c32e97"
+source = "git+https://github.com/aeterna-ars/brevno#41e155291f4d09be19dad5380901e86ba2c32e97"
 dependencies = [
  "buffe-rs",
 ]
@@ -518,10 +518,12 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 [[package]]
 name = "erret-macro"
 version = "0.1.0"
+source = "git+https://github.com/aeterna-ars/erret#e2ac8da491af0beda7f31837d2f285e6ed1a5250"
 
 [[package]]
 name = "erret-result"
 version = "0.1.0"
+source = "git+https://github.com/aeterna-ars/erret#e2ac8da491af0beda7f31837d2f285e6ed1a5250"
 
 [[package]]
 name = "errno"

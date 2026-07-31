@@ -17,9 +17,9 @@ aya-ebpf = { git = "https://github.com/aya-rs/aya" }
 aya-log-ebpf = { git = "https://github.com/aya-rs/aya" }
 aya = { git = "https://github.com/aya-rs/aya" }
 aya-log = { git = "https://github.com/aya-rs/aya" }
-brevno = { git = "https://github.com/ecdhe-x25519/brevno" }
-erret-macro = { path = "../../libs/erret/erret-macro" }
-erret-result = { path = "../../libs/erret/erret-result" }
+brevno = { git = "https://github.com/aeterna-ars/brevno" }
+erret-macro = { git = "https://github.com/aeterna-ars/erret" }
+erret-result = { git = "https://github.com/aeterna-ars/erret" }
 env_logger = "0.11.11"
 tokio = { version = "1.53.1", features = ["full"] }
 serde = "1.0.228"

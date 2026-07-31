@@ -25,6 +25,8 @@ use vanguard_core::{
     erret_result::*,
     error::VanguardError,
     maps,
+    brevno::*,
+    grpc::server::*,
 };
 
 struct XdpDaemon {
@@ -95,12 +97,12 @@ impl XdpDaemon {
 
         maps::config::ConfigMap::write(&mut bpf, config.config)?;
 
-        for ip in config.blacklist {
-            maps::blacklist::BlocklistMap::block(&mut bpf, ip.ip.0, ip.blocked_until)?;
+        for block in config.blacklist {
+            maps::blacklist::BlocklistMap::block(&mut bpf, block.ip, block.blocked_until)?;
         }
 
         for ip in config.whitelist {
-            maps::whitelist::WhitelistMap::insert(&mut bpf, ip.0)?;
+            maps::whitelist::WhitelistMap::insert(&mut bpf, ip)?;
         }
 
         for rule in config.rules {
@@ -189,18 +191,18 @@ impl XdpDaemon {
     }
 }
 
-brevno::init_global_logger!(128, 128, brevno::log::LogLevel::Info);
+init_global_logger!(128, 128, log::LogLevel::Info);
 
 #[tokio::main]
 async fn main() -> ErrResult<()> {
     let config_path = "/home/user/projects/projects/vanguard/vanguard.yml";
 
-    std::thread::spawn( || {
-        let logger = brevno::log::Logger::<128, 128>::init(log::LogLevel::Info);
-        // loop {
-        //     println!("{}", logger.read_log().unwrap().decode().unwrap())
-        // }
-    });
+    // std::thread::spawn( || {
+    //     let logger = log::Logger::<128, 128>::init(log::LogLevel::Info);
+    //     loop {
+    //         println!("{}", logger.read_log().unwrap().decode().unwrap())
+    //     }
+    // });
 
     let daemon = XdpDaemon::load(config_path).await?;
     daemon.run().await?;
