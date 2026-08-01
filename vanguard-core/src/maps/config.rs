@@ -2,10 +2,10 @@ use super::common::*;
 use erret_result::ErrResult;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpConfig {
-    pub rate_limit: u32,
     pub block_time: u64,
+    pub rate_limit: u32,
 }
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpConfig {}

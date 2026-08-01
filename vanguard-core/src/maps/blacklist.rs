@@ -3,7 +3,7 @@ use erret_result::ErrResult;
 use super::ip::XdpIp;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpBlockEntry {
     pub blocked_until: u64,
 }

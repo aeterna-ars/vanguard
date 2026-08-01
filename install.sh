@@ -65,13 +65,7 @@ else
     echo "Successfully builded"
 fi
 
-
-if [ "$MODE" = "release" ]; then
-    BINARY_PATH="target/release/vanguard-cli"
-else
-    BINARY_PATH="target/release/vanguard-cli"
-fi
-
+BINARY_PATH="target/release/vanguard-cli"
 INSTALL_PATH="/usr/local/bin/vanguard-cli"
 
 echo "Copying bin to $INSTALL_PATH..."

@@ -18,15 +18,15 @@ use aya_log::EbpfLogger;
 use libsystemd::daemon::{self, *};
 
 use vanguard_core::{
+    brevno::*,
     config::{
         GrpcApi,
         VanguardConfig
     },
     erret_result::*,
     error::VanguardError,
-    maps,
-    brevno::*,
     grpc::server::*,
+    maps,
 };
 
 struct XdpDaemon {

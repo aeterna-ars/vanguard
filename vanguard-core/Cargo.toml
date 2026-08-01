@@ -5,22 +5,32 @@ edition.workspace = true
 
 [dependencies]
 aya = { workspace = true, optional = true }
-clap = { workspace = true, features = ["derive"], optional = true }
-serde = { workspace = true, features = ["derive"], optional = true }
-serde_yaml = { workspace = true }
 network-types = { workspace = true }
-erret-macro = { workspace = true }
-erret-result = { workspace = true }
-brevno = { workspace = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_yaml = { workspace = true, optional = true }
 
-tokio = { workspace = true }
-tonic = { workspace = true }
-tonic-prost = { workspace = true }
-prost = { workspace = true }
+erret-macro = { workspace = true, optional = true }
+erret-result = { workspace = true, optional = true }
+brevno = { workspace = true, optional = true }
 
-[build-dependencies]
-tonic-prost-build = "0.14.6"
+tokio = { workspace = true, optional = true }
+tonic = { workspace = true, optional = true }
+tonic-prost = { workspace = true, optional = true }
+tonic-prost-build = { version = "0.14.6", optional = true }
+prost = { workspace = true, optional = true }
 
 [features]
 default = ["userspace"]
-userspace = ["dep:aya", "dep:clap", "dep:serde"]
+userspace = [
+    "dep:aya",
+    "dep:serde",
+    "dep:serde_yaml",
+    "dep:brevno",
+    "dep:tokio",
+    "dep:tonic",
+    "dep:tonic-prost",
+    "dep:tonic-prost-build",
+    "dep:prost",
+    "dep:erret-result",
+    "dep:erret-macro",
+]

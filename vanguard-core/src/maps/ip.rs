@@ -3,7 +3,7 @@ use erret_result::ErrResult;
 use crate::error::*;
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "userspace", derive(Clone, Copy, PartialEq, Eq))]
 pub struct XdpIp(pub [u8; 16]);
 impl XdpIp {
     pub fn from_v4(v4: [u8; 4]) -> Self {

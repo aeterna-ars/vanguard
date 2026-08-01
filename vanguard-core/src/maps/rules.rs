@@ -6,7 +6,7 @@ use super::{
 };
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpRuleKey {
     pub ip: XdpIp,
     pub port: u16,
@@ -17,16 +17,16 @@ pub struct XdpRuleKey {
 unsafe impl Pod for XdpRuleKey {}
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpRuleValue {
-    pub action: XdpRuleAction,
     pub redirect: XdpRuleKey,
+    pub action: XdpRuleAction,
 }
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpRuleValue {}
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub enum XdpRuleAction {
     ABORTED = 0,
     DROP = 1,

@@ -1725,7 +1725,6 @@ version = "0.1.0"
 dependencies = [
  "aya",
  "brevno",
- "clap",
  "erret-macro",
  "erret-result",
  "network-types",

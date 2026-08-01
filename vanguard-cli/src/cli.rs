@@ -1,12 +1,14 @@
 use clap::{
     Parser,
     Subcommand,
+    Args
 };
 use vanguard_core::{
     erret_result::*,
     maps::{
         *,
         ip::*,
+        rules::*,
     },
     grpc::client::*,
 };
@@ -105,14 +107,13 @@ impl ListsCommands {
 pub enum BlacklistCommands {
     #[command(about = "Add to XDP blacklist", long_about)]
     Block {
-        ip: XdpIp,
-
+        ip: String,
         until: u64,
     },
 
     #[command(about = "Delete from XDP blacklist", long_about)]
     Del {
-        ip: XdpIp,
+        ip: String,
     },
 }
 impl BlacklistCommands {
@@ -129,15 +130,15 @@ impl BlacklistCommands {
         Ok(())
     }
 
-    async fn block(ip: Ip, blocked_until: u64) -> ErrResult<()> {
+    async fn block(ip: String, blocked_until: u64) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
-        grpc.block(ip.as_str(), blocked_until).await?;
+        grpc.block(ip, blocked_until).await?;
         Ok(())
     }
 
-    async fn delete(ip: Ip) -> ErrResult<()> {
+    async fn delete(ip: String) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
-        grpc.block(ip.as_str(), 0).await?;
+        grpc.block(ip, 0).await?;
         Ok(())
     }
 }
@@ -146,12 +147,12 @@ impl BlacklistCommands {
 pub enum WhitelistCommands {
     #[command(about = "Add to XDP whitelist", long_about)]
     White {
-        ip: XdpIp,
+        ip: String,
     },
 
     #[command(about = "Delete from XDP whitelist", long_about)]
     Del {
-        ip: XdpIp,
+        ip: String,
     },
 }
 impl WhitelistCommands {
@@ -168,16 +169,66 @@ impl WhitelistCommands {
         Ok(())
     }
 
-    async fn white(ip: Ip) -> ErrResult<()> {
+    async fn white(ip: String) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
-        grpc.white(ip.as_str()).await?;
+        grpc.white(ip).await?;
         Ok(())
     }
 
-    async fn delete(ip: Ip) -> ErrResult<()> {
+    async fn delete(ip: String) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
-        grpc.block(ip.as_str(), 0).await?;
+        grpc.block(ip, 0).await?;
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct XdpRuleKeyWrapper {
+    #[arg(long, help = "IP address")]
+    pub ip: String,
+    
+    #[arg(long, help = "Port number")]
+    pub port: u16,
+    
+    #[arg(long, help = "Ethernet type")]
+    pub eth: String,
+    
+    #[arg(long, help = "IP protocol")]
+    pub proto: String,
+}
+
+impl TryFrom<XdpRuleKeyWrapper> for XdpRuleKey {
+    type Error = ErrRet;
+
+    fn try_from(w: XdpRuleKeyWrapper) -> Result<Self, Self::Error> {
+        Ok(XdpRuleKey {
+            ip: XdpIp::to_type(w.ip)?,
+            port: w.port,
+            eth: EtherType::to_type(w.eth)?,
+            proto: IpProto::to_type(w.proto)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct XdpRuleValueWrapper {
+    #[arg(long, help = "Action (Pass, Drop, Redirect etc.)")]
+    pub action: String,
+
+    #[command(flatten)]
+    pub redirect: XdpRuleKeyWrapper,
+}
+
+impl TryFrom<XdpRuleValueWrapper> for XdpRuleValue {
+    type Error = ErrRet;
+
+    fn try_from(w: XdpRuleValueWrapper) -> Result<Self, Self::Error> {
+        let redirect_key: XdpRuleKey = w.redirect.try_into()?;
+            
+        Ok(XdpRuleValue {
+            action: XdpRuleAction::to_type(w.action)?,
+            redirect: redirect_key,
+        })
     }
 }
 
@@ -188,14 +239,17 @@ pub enum RulesCommands {
 
     #[command(about = "XDP add rule", long_about)]
     Add {
-        key: XdpRuleKey,
+        #[command(flatten)]
+        key: XdpRuleKeyWrapper,
 
-        value: XdpRuleValue,
+        #[command(flatten)]
+        value: XdpRuleValueWrapper,
     },
 
     #[command(about = "XDP delete rule", long_about)]
     Del {
-        key: XdpRuleKey,
+        #[command(flatten)]
+        key: XdpRuleKeyWrapper,
     },
 }
 impl RulesCommands {
@@ -221,14 +275,21 @@ impl RulesCommands {
         Ok(())
     }
 
-    async fn add_rule(key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
+    async fn add_rule(key: XdpRuleKeyWrapper, value: XdpRuleValueWrapper) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
+
+        let key = key.try_into()?;
+        let value = value.try_into()?;
+
         grpc.add_rule(key, value).await?;
         Ok(())
     }
 
-    async fn del_rule(key: XdpRuleKey) -> ErrResult<()> {
+    async fn del_rule(key: XdpRuleKeyWrapper) -> ErrResult<()> {
         let mut grpc = VanguardGrpcClient::connect_local().await?;
+
+        let key = key.try_into()?;
+
         grpc.del_rule(key).await?;
         Ok(())
     }

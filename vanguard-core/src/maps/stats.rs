@@ -3,7 +3,7 @@ use erret_result::ErrResult;
 use crate::error::VanguardError;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpGlobalStats {
     pub total: u64,
     pub dropped: u64,
