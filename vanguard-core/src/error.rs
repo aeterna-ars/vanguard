@@ -3,10 +3,10 @@ pub enum VanguardError {
     #[error("Cli error: {}")]
     Cli(&'static str),
 
-    #[error("eBPF error: {}")]
+    #[error("eBPF map error: {}")]
     EbpfMap(String),
 
-    #[error("Ebpf error: {}")]
+    #[error("eBPF error: {}")]
     Ebpf(&'static str),
 
     #[error("IO error: {}")]

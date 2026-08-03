@@ -1,9 +1,107 @@
+#[cfg(feature = "userspace")]
 use super::common::*;
+
+#[cfg(feature = "userspace")]
 use erret_result::ErrResult;
+
+#[cfg(feature = "userspace")]
 use crate::error::*;
 
 #[repr(C)]
-#[cfg_attr(feature = "userspace", derive(Clone, Copy, PartialEq, Eq))]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct XdpNet {
+    pub ip: XdpIp,
+    pub prefix_len: u32,
+}
+#[cfg(feature = "userspace")]
+unsafe impl Pod for XdpNet {}
+
+#[cfg(feature = "userspace")]
+impl Parse for XdpNet {
+    fn as_str(&self) -> String {
+        let ip_str = self.ip.as_str();
+        
+        let bytes = self.ip.0;
+        let is_v4 = bytes[10] == 0xFF 
+            && bytes[11] == 0xFF 
+            && bytes[0..10].iter().all(|&b| b == 0);
+
+        let prefix = if is_v4 {
+            self.prefix_len.saturating_sub(96)
+        } else {
+            self.prefix_len
+        };
+
+        format!("{}/{}", ip_str, prefix)
+    }
+
+    fn to_type(s: String) -> ErrResult<Self> {
+        use std::net::IpAddr;
+        use std::str::FromStr;
+
+        let s = s.trim();
+        let mut parts = s.split('/');
+        let ip_str = parts.next().ok_or_else(|| VanguardError::Io("empty IP string"))?;
+
+        let ip_addr = IpAddr::from_str(ip_str)
+            .map_err(|_| VanguardError::Io("invalid IP format"))?;
+
+        let raw_prefix = match parts.next() {
+            Some(p_str) => p_str.parse::<u32>().map_err(|_| VanguardError::Io("invalid CIDR prefix"))?,
+            None => match ip_addr {
+                IpAddr::V4(_) => 32,
+                IpAddr::V6(_) => 128,
+            },
+        };
+
+        match ip_addr {
+            IpAddr::V4(_) if raw_prefix > 32 => return Err(VanguardError::Io("IPv4 prefix cant be > 32").into()),
+            IpAddr::V6(_) if raw_prefix > 128 => return Err(VanguardError::Io("IPv6 prefix cant be > 128").into()),
+            _ => {}
+        }
+
+        let (xdp_ip, final_prefix) = match ip_addr {
+            IpAddr::V4(v4) => {
+                let mut octets = v4.octets();
+                let bits_to_clear = 32 - raw_prefix;
+                if bits_to_clear > 0 {
+                    let mask = !0u32 << bits_to_clear;
+                    let ip_u32 = u32::from_be_bytes(octets) & mask;
+                    octets = ip_u32.to_be_bytes();
+                }
+                
+                let ip = XdpIp::from_v4(octets);
+                (ip, raw_prefix + 96)
+            }
+            IpAddr::V6(v6) => {
+                let mut octets = v6.octets();
+                let mut bits_to_clear = 128 - raw_prefix;
+                for i in (0..16).rev() {
+                    if bits_to_clear >= 8 {
+                        octets[i] = 0;
+                        bits_to_clear -= 8;
+                    } else if bits_to_clear > 0 {
+                        octets[i] &= !0u8 << bits_to_clear;
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+                
+                let ip = XdpIp::from_v6(octets);
+                (ip, raw_prefix)
+            }
+        };
+
+        Ok(Self {
+            ip: xdp_ip,
+            prefix_len: final_prefix,
+        })
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct XdpIp(pub [u8; 16]);
 impl XdpIp {
     pub fn from_v4(v4: [u8; 4]) -> Self {
@@ -24,6 +122,7 @@ impl XdpIp {
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpIp {}
 
+#[cfg(feature = "userspace")]
 impl Parse for XdpIp {
     fn as_str(&self) -> String {
         let bytes = self.0;
@@ -52,5 +151,55 @@ impl Parse for XdpIp {
             IpAddr::V4(v4) => Ok(XdpIp::from_v4(v4.octets())),
             IpAddr::V6(v6) => Ok(XdpIp::from_v6(v6.octets())),
         }
+    }
+}
+
+#[cfg(test)]
+mod test_ip {
+    use super::*;
+
+    #[test]
+    fn test_ipv4_conversion() {
+        let ip_str = "192.168.1.1".to_string();
+        
+        let xdp_ip = XdpIp::to_type(ip_str).unwrap();
+        
+        assert_eq!(xdp_ip.0[10], 0xFF);
+        assert_eq!(xdp_ip.0[11], 0xFF);
+        assert_eq!(xdp_ip.0[12], 192);
+        assert_eq!(xdp_ip.0[13], 168);
+        assert_eq!(xdp_ip.0[14], 1);
+        assert_eq!(xdp_ip.0[15], 1);
+
+        assert_eq!(xdp_ip.as_str(), "192.168.1.1");
+    }
+
+    #[test]
+    fn test_ipv6_conversion() {
+        let ip_str = "2001:db8::1".to_string();
+        
+        let xdp_ip = XdpIp::to_type(ip_str).unwrap();
+        
+        assert_eq!(xdp_ip.as_str(), "2001:db8::1");
+    }
+
+    #[test]
+    fn test_trim_whitespace() {
+        let ip_str = "  10.0.0.5 \n".to_string();
+        let xdp_ip = XdpIp::to_type(ip_str).unwrap();
+        
+        assert_eq!(xdp_ip.as_str(), "10.0.0.5");
+    }
+
+    #[test]
+    fn test_invalid_ip_format() {
+        let bad_ip = "192.168.1.256".to_string();
+        assert!(XdpIp::to_type(bad_ip).is_err());
+
+        let text = "not-an-ip".to_string();
+        assert!(XdpIp::to_type(text).is_err());
+        
+        let with_port = "127.0.0.1:8080".to_string();
+        assert!(XdpIp::to_type(with_port).is_err());
     }
 }

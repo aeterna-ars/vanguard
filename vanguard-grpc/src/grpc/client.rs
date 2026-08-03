@@ -3,18 +3,16 @@ use std::net::SocketAddr;
 use tonic::transport::Channel;
 
 use super::vanguard_api::{
-    self,
     vanguard_client::*,
     *,
 };
 
-use crate::maps::{
+use vanguard_core::maps::{
     rules::*,
     common::Parse,
     stats::*,
 };
-
-use erret_result::*;
+use vanguard_core::erret_result::*;
 
 pub struct VanguardGrpcClient {
     pub inner: VanguardClient<Channel>,
@@ -103,7 +101,7 @@ impl VanguardGrpcClient {
 }
 
 fn parse_rule_key(key: XdpRuleKey) -> RuleKey {
-    vanguard_api::RuleKey {
+    super::vanguard_api::RuleKey {
         ip: key.ip.as_str(),
         port: key.port as u32,
         eth: key.eth.as_str(),

@@ -1,6 +1,11 @@
+#[cfg(feature = "userspace")]
 use super::common::*;
+
+#[cfg(feature = "userspace")]
 use erret_result::ErrResult;
-use super::ip::XdpIp;
+
+#[cfg(feature = "userspace")]
+use super::ip::{XdpIp, XdpNet};
 
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]
@@ -10,20 +15,24 @@ pub struct XdpBlockEntry {
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpBlockEntry {}
 
+#[cfg(feature = "userspace")]
 pub struct BlocklistMap;
+
+#[cfg(feature = "userspace")]
 impl BlocklistMap {
-    fn get(bpf: &mut Ebpf) -> ErrResult<HashMap<MapData, XdpIp, XdpBlockEntry>> {
-        get_map!(bpf, "BLACKLIST", HashMap, HashMap<MapData, XdpIp, XdpBlockEntry>)
+    fn get(bpf: &mut Ebpf) -> ErrResult<LpmTrie<MapData, XdpIp, XdpBlockEntry>> {
+        get_map!(bpf, "BLACKLIST", LpmTrie, LpmTrie<MapData, XdpIp, XdpBlockEntry>)
     }
 
-    fn is_blocked(map: &HashMap<MapData, XdpIp, XdpBlockEntry>, ip: XdpIp, now: u64) -> bool {
-        match map.get(&ip, 0) {
+    fn is_blocked(map: &LpmTrie<MapData, XdpIp, XdpBlockEntry>, ip: XdpNet, now: u64) -> bool {
+        let key: Key<XdpIp> = Key::new(ip.prefix_len, ip.ip);
+        match map.get(&key, 0) {
             Ok(entry) => now < entry.blocked_until,
             Err(_) => false,
         }
     }
 
-    pub fn block(bpf: &mut Ebpf, ip: XdpIp, duration: u64) -> ErrResult<()> {
+    pub fn block(bpf: &mut Ebpf, ip: XdpNet, duration: u64) -> ErrResult<()> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
             .as_nanos() as u64;
@@ -33,15 +42,17 @@ impl BlocklistMap {
         if Self::is_blocked(&map, ip, now) {
             return Ok(());
         } else {
-            map.insert(&ip, &XdpBlockEntry { blocked_until: now + duration }, 0)?;
+            let key: Key<XdpIp> = Key::new(ip.prefix_len, ip.ip);
+            map.insert(&key, &XdpBlockEntry { blocked_until: now + duration }, 0)?;
         }
 
         Ok(())
     }
 
-    pub fn unblock(bpf: &mut Ebpf, ip: XdpIp) -> ErrResult<()> {
+    pub fn unblock(bpf: &mut Ebpf, ip: XdpNet) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
-        map.remove(&ip)?;
+        let key: Key<XdpIp> = Key::new(ip.prefix_len, ip.ip);
+        map.remove(&key)?;
         Ok(())
     }
 }

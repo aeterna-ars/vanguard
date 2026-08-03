@@ -1,11 +1,11 @@
 use aya_ebpf::{
     macros::map,
-    maps::{HashMap, LruPerCpuHashMap, Array, PerCpuArray},
+    maps::{HashMap, LruPerCpuHashMap, Array, PerCpuArray, lpm_trie::*},
 };
 
 pub use vanguard_core::maps::{
     config::XdpConfig,
-    ip::XdpIp,
+    ip::{XdpIp, XdpNet},
     blacklist::XdpBlockEntry,
     counter::XdpCounter,
     rules::{XdpRuleValue, XdpRuleKey}
@@ -15,22 +15,33 @@ pub use vanguard_core::maps::{
 pub static CONFIG: Array<XdpConfig> = Array::<XdpConfig>::with_max_entries(1, 0);
 
 #[map]
-pub static BLACKLIST: HashMap<XdpIp, XdpBlockEntry> = HashMap::with_max_entries(65536, 0);
+pub static BLACKLIST: LpmTrie<XdpIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0);
 #[inline(always)]
-pub fn block_ip(ip: &XdpIp, now: u64, config: &XdpConfig) {
+pub fn block_ip(addr: &XdpNet, now: u64, config: &XdpConfig) {
     let entry = XdpBlockEntry {
         blocked_until: config.block_time + now,
     };
-    let _ = BLACKLIST.insert(ip, &entry, 0);
+
+    let key: Key<XdpIp> = Key {
+        prefix_len: addr.prefix_len,
+        data: addr.ip,
+    };
+
+    let _ = BLACKLIST.insert(key, &entry, 0);
 }
 #[inline(always)]
-pub fn is_blocked(ip: &XdpIp, now: u64) -> bool {
-    match unsafe { BLACKLIST.get(ip) } {
+pub fn is_blocked(ip: &XdpNet, now: u64) -> bool {
+    let key: Key<XdpIp> = Key {
+        prefix_len: ip.prefix_len,
+        data: ip.ip,
+    };
+
+    match BLACKLIST.get(&key) {
         Some(entry) => {
             if now < (*entry).blocked_until {
                 true
             } else {
-                let _ = BLACKLIST.remove(ip);
+                let _ = BLACKLIST.remove(key);
                 false
             }
         }
@@ -39,7 +50,7 @@ pub fn is_blocked(ip: &XdpIp, now: u64) -> bool {
 }
 
 #[map]
-pub static WHITELIST: HashMap<XdpIp, u8> = HashMap::with_max_entries(65536, 0); // u8 is nothing
+pub static WHITELIST: LpmTrie<XdpIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0); // u8 is nothing
 
 #[map]
 pub static RULES: HashMap<XdpRuleKey, XdpRuleValue> = HashMap::with_max_entries(65536, 0);

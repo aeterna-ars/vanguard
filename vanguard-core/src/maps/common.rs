@@ -1,16 +1,25 @@
+#[cfg(feature = "userspace")]
 use crate::error::VanguardError;
+
+#[cfg(feature = "userspace")]
 use erret_result::*;
+
+#[cfg(feature = "userspace")]
 pub(super) use get_map::get_map;
+
 pub use network_types::{
     eth::EtherType,
     ip::IpProto,
 };
+
+#[cfg(feature = "userspace")]
 pub use aya::{
     Ebpf,
     Pod,
-    maps::{PerCpuArray, HashMap, MapData, Array}
+    maps::{PerCpuArray, HashMap, MapData, Array, lpm_trie::*}
 };
 
+#[cfg(feature = "userspace")]
 mod get_map {
     macro_rules! get_map {
         ($bpf:expr, $name:expr, $variant:ident, $type:ty) => {{
@@ -30,11 +39,13 @@ mod get_map {
     pub(crate) use get_map;
 }
 
+#[cfg(feature = "userspace")]
 pub trait Parse: Sized {
     fn as_str(&self) -> String;
     fn to_type(s: String) -> ErrResult<Self>;
 }
 
+#[cfg(feature = "userspace")]
 impl Parse for EtherType {
     fn as_str(&self) -> String {
         match self {
@@ -77,6 +88,7 @@ impl Parse for EtherType {
     }
 }
 
+#[cfg(feature = "userspace")]
 impl Parse for IpProto {
     fn as_str(&self) -> String {
         match self {

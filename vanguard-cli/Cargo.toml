@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 vanguard-core = { path = "../vanguard-core", features = ["userspace"] }
+vanguard-grpc = { path = "../vanguard-grpc" }
 aya = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 tokio = { workspace = true }

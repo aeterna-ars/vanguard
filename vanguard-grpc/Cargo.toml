@@ -1,0 +1,15 @@
+[package]
+name = "vanguard-grpc"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aya = { workspace = true }
+tokio = { workspace = true }
+tonic = { workspace = true }
+tonic-prost = { workspace = true }
+prost = { workspace = true }
+vanguard-core = { path = "../vanguard-core" }
+
+[build-dependencies]
+tonic-prost-build = { workspace = true }

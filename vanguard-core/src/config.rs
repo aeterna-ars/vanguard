@@ -21,7 +21,7 @@ pub struct VanguardConfig {
     pub blacklist: Vec<BlockConfig>,
 
     #[serde(default, deserialize_with = "deserialize_ip_list")]
-    pub whitelist: Vec<XdpIp>,
+    pub whitelist: Vec<XdpNet>,
 
     #[serde(default)]
     pub rules: Vec<Rule>,
@@ -43,7 +43,7 @@ fn default_iface() -> String { "eth0".to_string() }
 #[derive(Deserialize)]
 pub struct BlockConfig {
     #[serde(deserialize_with = "deserialize_ip")]
-    pub ip: XdpIp,
+    pub ip: XdpNet,
 
     #[serde(default)]
     pub blocked_until: u64,
@@ -74,6 +74,10 @@ impl Default for GrpcApi {
 }
 
 mod serialize {
+    use network_types::{
+        eth::EtherType,
+        ip::IpProto,
+    };
     use crate::maps::*;
     use super::*;
     use serde::{Deserialize, Deserializer, de::Error};
@@ -135,14 +139,18 @@ mod serialize {
     #[derive(Clone, Deserialize)]
     pub struct XdpRuleValueWrapper {
         pub action: String,
-        pub redirect: XdpRuleKeyWrapper,
+        pub redirect: Option<XdpRuleKeyWrapper>,
     }
 
     impl TryFrom<XdpRuleValueWrapper> for XdpRuleValue {
         type Error = ErrRet;
 
         fn try_from(w: XdpRuleValueWrapper) -> Result<Self, Self::Error> {
-            let redirect_key: XdpRuleKey = w.redirect.try_into()?;
+            let redirect_key: XdpRuleKey = if let Some(re) = w.redirect {
+                re.try_into()?
+            } else {
+                unsafe { core::mem::zeroed() }
+            };
             
             Ok(XdpRuleValue {
                 action: XdpRuleAction::to_type(w.action)?,
@@ -159,21 +167,21 @@ mod serialize {
         Ok(wrapper.try_into().map_err(|e| D::Error::custom(format!("{e}")))?)
     }
 
-    pub fn deserialize_ip<'de, D>(deserializer: D) -> Result<XdpIp, D::Error>
+    pub fn deserialize_ip<'de, D>(deserializer: D) -> Result<XdpNet, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s: String = Deserialize::deserialize(deserializer)?;
-        XdpIp::to_type(s).map_err(D::Error::custom)
+        XdpNet::to_type(s).map_err(D::Error::custom)
     }
 
-    pub fn deserialize_ip_list<'de, D>(deserializer: D) -> Result<Vec<XdpIp>, D::Error>
+    pub fn deserialize_ip_list<'de, D>(deserializer: D) -> Result<Vec<XdpNet>, D::Error>
     where
         D: Deserializer<'de>,
     {
         let ips: Vec<String> = Deserialize::deserialize(deserializer)?;
         ips.into_iter()
-            .map(|s| XdpIp::to_type(s).map_err(D::Error::custom))
+            .map(|s| XdpNet::to_type(s).map_err(D::Error::custom))
             .collect()
     }
 }
@@ -242,7 +250,7 @@ rules:
       proto: "udp"
     value:
       action: "redirect"
-      to:
+      redirect:
         ip: "1.1.1.1"
         port: 53
         eth: "ipv4"

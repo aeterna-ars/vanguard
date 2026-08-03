@@ -10,8 +10,8 @@ use vanguard_core::{
         ip::*,
         rules::*,
     },
-    grpc::client::*,
 };
+use vanguard_grpc::client::VanguardGrpcClient;
 
 #[derive(Parser)]
 #[command(name = "vanguard")]

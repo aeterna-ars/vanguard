@@ -1,39 +1,50 @@
+#[cfg(feature = "userspace")]
 use super::common::*;
-use erret_result::ErrResult;
-use super::ip::XdpIp;
 
+#[cfg(feature = "userspace")]
+use erret_result::ErrResult;
+
+#[cfg(feature = "userspace")]
+use super::ip::{XdpIp, XdpNet};
+
+#[cfg(feature = "userspace")]
 pub struct WhitelistMap;
+
+#[cfg(feature = "userspace")]
 impl WhitelistMap {
-    fn get(bpf: &mut Ebpf) -> ErrResult<HashMap<MapData, XdpIp, u8>> {
-        get_map!(bpf, "WHITELIST", HashMap, HashMap<MapData, XdpIp, u8>)
+    fn get(bpf: &mut Ebpf) -> ErrResult<LpmTrie<MapData, XdpIp, u8>> {
+        get_map!(bpf, "WHITELIST", LpmTrie, LpmTrie<MapData, XdpIp, u8>)
     }
 
-    fn is_white(map: &HashMap<MapData, XdpIp, u8>, ip: XdpIp) -> bool {
-        match map.get(&ip, 0) {
+    fn is_white(map: &LpmTrie<MapData, XdpIp, u8>, ip: XdpNet) -> bool {
+        let key: Key<XdpIp> = Key::new(ip.prefix_len, ip.ip);
+        match map.get(&key, 0) {
             Ok(_) => true,
             Err(_) => false,
         }
     }
 
-    pub fn insert(bpf: &mut Ebpf, ip: XdpIp) -> ErrResult<()> {
+    pub fn insert(bpf: &mut Ebpf, ip: XdpNet) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
 
         if Self::is_white(&map, ip) {
             return Ok(());
         } else {
-            map.insert(&ip, 0, 0)?;
+            let key: Key<XdpIp> = Key::new(ip.prefix_len, ip.ip);
+            map.insert(&key, 0, 0)?;
         }
 
         Ok(())
     }
 
-    pub fn remove(bpf: &mut Ebpf, ip: XdpIp) -> ErrResult<()> {
+    pub fn remove(bpf: &mut Ebpf, ip: XdpNet) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
 
         if !Self::is_white(&map, ip) {
             return Ok(());
         } else {
-            map.remove(&ip)?;
+            let key: Key<XdpIp> = Key::new(ip.prefix_len, ip.ip);
+            map.remove(&key)?;
         }
 
         Ok(())

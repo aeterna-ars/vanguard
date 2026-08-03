@@ -1,4 +1,7 @@
+#[cfg(feature = "userspace")]
 use super::common::*;
+
+#[cfg(feature = "userspace")]
 use erret_result::ErrResult;
 
 #[repr(C)]
@@ -10,7 +13,10 @@ pub struct XdpConfig {
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpConfig {}
 
+#[cfg(feature = "userspace")]
 pub struct ConfigMap;
+
+#[cfg(feature = "userspace")]
 impl ConfigMap {
     fn get(bpf: &mut Ebpf) -> ErrResult<Array<MapData, XdpConfig>> {
         get_map!(bpf, "CONFIG", Array, Array<MapData, XdpConfig>)

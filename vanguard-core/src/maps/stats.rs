@@ -1,5 +1,10 @@
+#[cfg(feature = "userspace")]
 use super::common::*;
+
+#[cfg(feature = "userspace")]
 use erret_result::ErrResult;
+
+#[cfg(feature = "userspace")]
 use crate::error::VanguardError;
 
 #[repr(C)]
@@ -14,7 +19,10 @@ pub struct XdpGlobalStats {
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpGlobalStats {}
 
+#[cfg(feature = "userspace")]
 pub struct GlobalStatsMap;
+
+#[cfg(feature = "userspace")]
 impl GlobalStatsMap {
     fn get(bpf: &mut Ebpf) -> ErrResult<PerCpuArray<MapData, XdpGlobalStats>> {
         get_map!(bpf, "STATS", PerCpuArray, PerCpuArray<MapData, XdpGlobalStats>)

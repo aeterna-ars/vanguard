@@ -34,7 +34,7 @@ pub fn main(ctx: XdpContext) -> u32 {
 fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     let (addr, action) = parse::try_filter_ip(&ctx, 0)?;
 
-    if maps::WHITELIST.get_ptr(&addr).is_some() {
+    if maps::WHITELIST.get(&addr).is_some() {
         return Ok(action)
     }
 

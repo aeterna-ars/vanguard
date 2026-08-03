@@ -1717,6 +1717,7 @@ dependencies = [
  "clap",
  "tokio",
  "vanguard-core",
+ "vanguard-grpc",
 ]
 
 [[package]]
@@ -1728,13 +1729,8 @@ dependencies = [
  "erret-macro",
  "erret-result",
  "network-types",
- "prost",
  "serde",
  "serde_yaml",
- "tokio",
- "tonic",
- "tonic-prost",
- "tonic-prost-build",
 ]
 
 [[package]]
@@ -1746,6 +1742,20 @@ dependencies = [
  "env_logger",
  "libsystemd",
  "tokio",
+ "vanguard-core",
+ "vanguard-grpc",
+]
+
+[[package]]
+name = "vanguard-grpc"
+version = "0.1.0"
+dependencies = [
+ "aya",
+ "prost",
+ "tokio",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
  "vanguard-core",
 ]
 

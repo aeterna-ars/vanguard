@@ -1,6 +1,17 @@
+#[cfg(feature = "userspace")]
 use super::common::*;
+
+use network_types::{
+    eth::EtherType,
+    ip::IpProto,
+};
+
+#[cfg(feature = "userspace")]
 use erret_result::ErrResult;
+
+#[cfg(feature = "userspace")]
 use crate::error::*;
+
 use super::{
     ip::XdpIp,
 };
@@ -26,7 +37,7 @@ pub struct XdpRuleValue {
 unsafe impl Pod for XdpRuleValue {}
 
 #[repr(C)]
-#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
+#[derive(Clone, Copy)]
 pub enum XdpRuleAction {
     ABORTED = 0,
     DROP = 1,
@@ -59,7 +70,10 @@ impl Parse for XdpRuleAction {
     }
 }
 
+#[cfg(feature = "userspace")]
 pub struct RulesMap;
+
+#[cfg(feature = "userspace")]
 impl RulesMap {
     fn get(bpf: &mut Ebpf) -> ErrResult<HashMap<MapData, XdpRuleKey, XdpRuleValue>> {
         get_map!(bpf, "RULES", HashMap, HashMap<MapData, XdpRuleKey, XdpRuleValue>)

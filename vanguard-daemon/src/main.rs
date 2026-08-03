@@ -25,9 +25,9 @@ use vanguard_core::{
     },
     erret_result::*,
     error::VanguardError,
-    grpc::server::*,
     maps,
 };
+use vanguard_grpc::server::*;
 
 struct XdpDaemon {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -127,7 +127,7 @@ impl XdpDaemon {
     }
 
     async fn grpc(&self, grpc: &GrpcApi) -> ErrResult<()> {
-        let default_addr = "127.0.0.1:8080".parse().expect("invalid addr");
+        let default_addr: std::net::SocketAddr = "127.0.0.1:8080".parse().expect("invalid addr");
 
         let bpf = self.bpf.clone();
         tokio::spawn(async move {

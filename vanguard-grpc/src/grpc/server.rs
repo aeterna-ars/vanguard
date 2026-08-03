@@ -8,7 +8,7 @@ use tonic::{transport::Server, Request, Response, Status};
 
 use super::vanguard_api::{vanguard_server::*, *};
 
-use crate::maps::{
+use vanguard_core::maps::{
     rules::*,
     common::*,
     stats::*,
@@ -17,10 +17,8 @@ use crate::maps::{
     blacklist::*,
     whitelist::*,
 };
-
-use erret_result::*;
-
-use brevno::*;
+use vanguard_core::erret_result::*;
+use vanguard_core::brevno::*;
 
 struct VanguardService {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -79,10 +77,10 @@ impl Vanguard for VanguardService {
         request: Request<BlockRequest>,
     ) -> Result<Response<()>, Status> {
         let req = request.into_inner();
-        info!("Blocklist request: {}, until {}", req.ip, req.block_until);
+        info!("Blacklist request: {}, until {}", req.ip, req.block_until);
 
-        let ip = XdpIp::to_type(req.ip)
-            .map_err(|e| Status::invalid_argument(format!("Incorrect IP: {e}")))?;
+        let ip = XdpNet::to_type(req.ip)
+            .map_err(|e| Status::invalid_argument(format!("invalid IP: {e}")))?;
 
         let mut bpf = self.bpf.lock().await;
 
@@ -99,8 +97,8 @@ impl Vanguard for VanguardService {
         let req = request.into_inner();
         info!("Whitelist request: {}", req.ip);
 
-        let ip = XdpIp::to_type(req.ip)
-            .map_err(|e| Status::invalid_argument(format!("Incorrect IP: {e}")))?;
+        let ip = XdpNet::to_type(req.ip)
+            .map_err(|e| Status::invalid_argument(format!("invalid IP: {e}")))?;
 
         let mut bpf = self.bpf.lock().await;
 
@@ -217,7 +215,7 @@ fn parse_rule_key(key: RuleKey) -> Result<XdpRuleKey, Status> {
     })
 }
 
-pub async fn start_grpc_server(bpf: Arc<Mutex<aya::Ebpf>>, addr: SocketAddr) -> ErrResult<()> {
+pub async fn start_grpc_server(bpf: Arc<Mutex<Ebpf>>, addr: SocketAddr) -> ErrResult<()> {
     let service = VanguardService {
         bpf,
     };
