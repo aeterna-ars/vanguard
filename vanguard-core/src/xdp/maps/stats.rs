@@ -1,11 +1,11 @@
 #[cfg(feature = "userspace")]
-use super::common::*;
+use crate::common::common::*;
 
 #[cfg(feature = "userspace")]
 use erret_result::ErrResult;
 
 #[cfg(feature = "userspace")]
-use crate::error::VanguardError;
+use crate::xdp::error::VanguardError;
 
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]

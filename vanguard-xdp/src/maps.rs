@@ -1,4 +1,4 @@
-use aya_ebpf::{
+pub use aya_ebpf::{
     macros::map,
     maps::{HashMap, LruPerCpuHashMap, Array, PerCpuArray, lpm_trie::*},
 };

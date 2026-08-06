@@ -8,7 +8,7 @@ use tonic::{transport::Server, Request, Response, Status};
 
 use super::vanguard_api::{vanguard_server::*, *};
 
-use vanguard_core::maps::{
+use vanguard_core::xdp::maps::{
     rules::*,
     common::*,
     stats::*,
@@ -17,8 +17,10 @@ use vanguard_core::maps::{
     blacklist::*,
     whitelist::*,
 };
-use vanguard_core::erret_result::*;
-use vanguard_core::brevno::*;
+use vanguard_core::{
+    erret_result::*,
+    brevno::*,
+};
 
 struct VanguardService {
     pub bpf: Arc<Mutex<Ebpf>>,

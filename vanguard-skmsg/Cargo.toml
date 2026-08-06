@@ -1,5 +1,5 @@
 [package]
-name = "vanguard-sockmap"
+name = "vanguard-skmsg"
 version.workspace = true
 edition.workspace = true
 autotests = false
@@ -13,8 +13,7 @@ panic = "abort"
 [dependencies]
 aya-ebpf = { workspace = true }
 aya-log-ebpf = { workspace = true }
-network-types = { workspace = true }
-vanguard-core = { path = "../vanguard-core" }
+vanguard-core = { path = "../vanguard-core", default-features = false }
 
 [features]
 default = []

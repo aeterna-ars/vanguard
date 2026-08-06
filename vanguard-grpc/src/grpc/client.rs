@@ -7,7 +7,7 @@ use super::vanguard_api::{
     *,
 };
 
-use vanguard_core::maps::{
+use vanguard_core::xdp::maps::{
     rules::*,
     common::Parse,
     stats::*,

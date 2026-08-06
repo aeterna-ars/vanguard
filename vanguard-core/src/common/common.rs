@@ -1,11 +1,11 @@
 #[cfg(feature = "userspace")]
-use crate::error::VanguardError;
+use crate::xdp::error::VanguardError;
 
 #[cfg(feature = "userspace")]
 use erret_result::*;
 
 #[cfg(feature = "userspace")]
-pub(super) use get_map::get_map;
+pub(crate) use get_map::get_map;
 
 pub use network_types::{
     eth::EtherType,
@@ -16,7 +16,7 @@ pub use network_types::{
 pub use aya::{
     Ebpf,
     Pod,
-    maps::{PerCpuArray, HashMap, MapData, Array, lpm_trie::*}
+    maps::{PerCpuArray, HashMap, MapData, Array, lpm_trie::*, SockHash, SockMap}
 };
 
 #[cfg(feature = "userspace")]
@@ -24,14 +24,14 @@ mod get_map {
     macro_rules! get_map {
         ($bpf:expr, $name:expr, $variant:ident, $type:ty) => {{
             let map = $bpf.take_map($name)
-                .ok_or_else(|| $crate::error::VanguardError::EbpfMap("map take error".to_string()))?;
+                .ok_or_else(|| $crate::xdp::error::VanguardError::EbpfMap("map take error".to_string()))?;
             
             match map {
                 aya::maps::Map::$variant(data) => {
                     let map_obj = aya::maps::Map::$variant(data);
-                    Ok(<$type>::try_from(map_obj).map_err(|e| $crate::error::VanguardError::EbpfMap(format!("take map error: {e}")))?)
+                    Ok(<$type>::try_from(map_obj).map_err(|e| $crate::xdp::error::VanguardError::EbpfMap(format!("take map error: {e}")))?)
                 }
-                _ => Err($crate::error::VanguardError::EbpfMap("try from map error".to_string()).into())
+                _ => Err($crate::xdp::error::VanguardError::EbpfMap("try from map error".to_string()).into())
             }
         }};
     }

@@ -17,7 +17,7 @@ use aya_log::EbpfLogger;
 
 use libsystemd::daemon::{self, *};
 
-use vanguard_core::{
+use vanguard_core::xdp::{
     brevno::*,
     config::{
         GrpcApi,

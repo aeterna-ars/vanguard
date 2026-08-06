@@ -1,5 +1,5 @@
 #[cfg(feature = "userspace")]
-use super::common::*;
+use crate::common::{common::*, ip::*};
 
 use network_types::{
     eth::EtherType,
@@ -10,16 +10,12 @@ use network_types::{
 use erret_result::ErrResult;
 
 #[cfg(feature = "userspace")]
-use crate::error::*;
-
-use super::{
-    ip::XdpIp,
-};
+use crate::xdp::error::*;
 
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpRuleKey {
-    pub ip: XdpIp,
+    pub ip: EbpfIp,
     pub port: u16,
     pub eth: EtherType,
     pub proto: IpProto,

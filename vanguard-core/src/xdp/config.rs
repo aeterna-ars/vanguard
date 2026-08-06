@@ -3,9 +3,9 @@ use serde::Deserialize;
 use erret_result::*;
 use super::maps::{
     config::*,
-    ip::*,
     rules::*,
 };
+use crate::common::ip::*;
 
 use self::serialize::*;
 
@@ -21,7 +21,7 @@ pub struct VanguardConfig {
     pub blacklist: Vec<BlockConfig>,
 
     #[serde(default, deserialize_with = "deserialize_ip_list")]
-    pub whitelist: Vec<XdpNet>,
+    pub whitelist: Vec<EbpfNet>,
 
     #[serde(default)]
     pub rules: Vec<Rule>,
@@ -43,7 +43,7 @@ fn default_iface() -> String { "eth0".to_string() }
 #[derive(Deserialize)]
 pub struct BlockConfig {
     #[serde(deserialize_with = "deserialize_ip")]
-    pub ip: XdpNet,
+    pub ip: EbpfNet,
 
     #[serde(default)]
     pub blocked_until: u64,
@@ -78,7 +78,7 @@ mod serialize {
         eth::EtherType,
         ip::IpProto,
     };
-    use crate::maps::*;
+    use crate::common::{common::*};
     use super::*;
     use serde::{Deserialize, Deserializer, de::Error};
 
@@ -120,7 +120,7 @@ mod serialize {
 
         fn try_from(w: XdpRuleKeyWrapper) -> Result<Self, Self::Error> {
             Ok(XdpRuleKey {
-                ip: XdpIp::to_type(w.ip)?,
+                ip: EbpfIp::to_type(w.ip)?,
                 port: w.port,
                 eth: EtherType::to_type(w.eth)?,
                 proto: IpProto::to_type(w.proto)?,
@@ -167,21 +167,21 @@ mod serialize {
         Ok(wrapper.try_into().map_err(|e| D::Error::custom(format!("{e}")))?)
     }
 
-    pub fn deserialize_ip<'de, D>(deserializer: D) -> Result<XdpNet, D::Error>
+    pub fn deserialize_ip<'de, D>(deserializer: D) -> Result<EbpfNet, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s: String = Deserialize::deserialize(deserializer)?;
-        XdpNet::to_type(s).map_err(D::Error::custom)
+        EbpfNet::to_type(s).map_err(D::Error::custom)
     }
 
-    pub fn deserialize_ip_list<'de, D>(deserializer: D) -> Result<Vec<XdpNet>, D::Error>
+    pub fn deserialize_ip_list<'de, D>(deserializer: D) -> Result<Vec<EbpfNet>, D::Error>
     where
         D: Deserializer<'de>,
     {
         let ips: Vec<String> = Deserialize::deserialize(deserializer)?;
         ips.into_iter()
-            .map(|s| XdpNet::to_type(s).map_err(D::Error::custom))
+            .map(|s| EbpfNet::to_type(s).map_err(D::Error::custom))
             .collect()
     }
 }

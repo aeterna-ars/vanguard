@@ -2,7 +2,8 @@
 members = [
     "vanguard-core",
     "vanguard-xdp",
-    "vanguard-sockmap",
+    "vanguard-skmsg",
+    "vanguard-skb",
     "vanguard-daemon",
     "vanguard-cli",
     "vanguard-grpc",

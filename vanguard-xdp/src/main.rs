@@ -13,7 +13,7 @@ use aya_ebpf::{
 };
 use aya_log_ebpf::info;
 
-use crate::maps::{CONFIG, update_stats};
+use crate::maps::*;
 
 #[xdp]
 pub fn main(ctx: XdpContext) -> u32 {
@@ -31,6 +31,7 @@ pub fn main(ctx: XdpContext) -> u32 {
     }
 }
 
+#[inline(always)]
 fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     let (addr, action) = parse::try_filter_ip(&ctx, 0)?;
 

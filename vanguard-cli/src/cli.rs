@@ -5,7 +5,7 @@ use clap::{
 };
 use vanguard_core::{
     erret_result::*,
-    maps::{
+    xdp::maps::{
         *,
         ip::*,
         rules::*,

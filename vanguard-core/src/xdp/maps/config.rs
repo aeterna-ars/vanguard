@@ -1,5 +1,5 @@
 #[cfg(feature = "userspace")]
-use super::common::*;
+use crate::common::common::*;
 
 #[cfg(feature = "userspace")]
 use erret_result::ErrResult;

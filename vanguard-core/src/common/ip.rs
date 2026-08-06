@@ -5,19 +5,19 @@ use super::common::*;
 use erret_result::ErrResult;
 
 #[cfg(feature = "userspace")]
-use crate::error::*;
+use crate::xdp::error::*;
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct XdpNet {
-    pub ip: XdpIp,
+pub struct EbpfNet {
+    pub ip: EbpfIp,
     pub prefix_len: u32,
 }
 #[cfg(feature = "userspace")]
-unsafe impl Pod for XdpNet {}
+unsafe impl Pod for EbpfNet {}
 
 #[cfg(feature = "userspace")]
-impl Parse for XdpNet {
+impl Parse for EbpfNet {
     fn as_str(&self) -> String {
         let ip_str = self.ip.as_str();
         
@@ -70,7 +70,7 @@ impl Parse for XdpNet {
                     octets = ip_u32.to_be_bytes();
                 }
                 
-                let ip = XdpIp::from_v4(octets);
+                let ip = EbpfIp::from_v4(octets);
                 (ip, raw_prefix + 96)
             }
             IpAddr::V6(v6) => {
@@ -88,7 +88,7 @@ impl Parse for XdpNet {
                     }
                 }
                 
-                let ip = XdpIp::from_v6(octets);
+                let ip = EbpfIp::from_v6(octets);
                 (ip, raw_prefix)
             }
         };
@@ -102,8 +102,8 @@ impl Parse for XdpNet {
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct XdpIp(pub [u8; 16]);
-impl XdpIp {
+pub struct EbpfIp(pub [u8; 16]);
+impl EbpfIp {
     pub fn from_v4(v4: [u8; 4]) -> Self {
         let mut bytes = [0u8; 16];
         bytes[10] = 0xFF;
@@ -120,10 +120,10 @@ impl XdpIp {
     }
 }
 #[cfg(feature = "userspace")]
-unsafe impl Pod for XdpIp {}
+unsafe impl Pod for EbpfIp {}
 
 #[cfg(feature = "userspace")]
-impl Parse for XdpIp {
+impl Parse for EbpfIp {
     fn as_str(&self) -> String {
         let bytes = self.0;
         
@@ -148,8 +148,8 @@ impl Parse for XdpIp {
             .map_err(|_| VanguardError::Io("invalid IP format"))?;
 
         match ip {
-            IpAddr::V4(v4) => Ok(XdpIp::from_v4(v4.octets())),
-            IpAddr::V6(v6) => Ok(XdpIp::from_v6(v6.octets())),
+            IpAddr::V4(v4) => Ok(EbpfIp::from_v4(v4.octets())),
+            IpAddr::V6(v6) => Ok(EbpfIp::from_v6(v6.octets())),
         }
     }
 }
@@ -162,7 +162,7 @@ mod test_ip {
     fn test_ipv4_conversion() {
         let ip_str = "192.168.1.1".to_string();
         
-        let xdp_ip = XdpIp::to_type(ip_str).unwrap();
+        let xdp_ip = EbpfIp::to_type(ip_str).unwrap();
         
         assert_eq!(xdp_ip.0[10], 0xFF);
         assert_eq!(xdp_ip.0[11], 0xFF);
@@ -178,7 +178,7 @@ mod test_ip {
     fn test_ipv6_conversion() {
         let ip_str = "2001:db8::1".to_string();
         
-        let xdp_ip = XdpIp::to_type(ip_str).unwrap();
+        let xdp_ip = EbpfIp::to_type(ip_str).unwrap();
         
         assert_eq!(xdp_ip.as_str(), "2001:db8::1");
     }
@@ -186,7 +186,7 @@ mod test_ip {
     #[test]
     fn test_trim_whitespace() {
         let ip_str = "  10.0.0.5 \n".to_string();
-        let xdp_ip = XdpIp::to_type(ip_str).unwrap();
+        let xdp_ip = EbpfIp::to_type(ip_str).unwrap();
         
         assert_eq!(xdp_ip.as_str(), "10.0.0.5");
     }
@@ -194,12 +194,12 @@ mod test_ip {
     #[test]
     fn test_invalid_ip_format() {
         let bad_ip = "192.168.1.256".to_string();
-        assert!(XdpIp::to_type(bad_ip).is_err());
+        assert!(EbpfIp::to_type(bad_ip).is_err());
 
         let text = "not-an-ip".to_string();
-        assert!(XdpIp::to_type(text).is_err());
+        assert!(EbpfIp::to_type(text).is_err());
         
         let with_port = "127.0.0.1:8080".to_string();
-        assert!(XdpIp::to_type(with_port).is_err());
+        assert!(EbpfIp::to_type(with_port).is_err());
     }
 }

@@ -1,0 +1,19 @@
+[package]
+name = "vanguard-sockmap"
+version.workspace = true
+edition.workspace = true
+autotests = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+aya-ebpf = { workspace = true }
+aya-log-ebpf = { workspace = true }
+vanguard-core = { path = "../vanguard-core", default-features = false }
+
+[features]
+default = []

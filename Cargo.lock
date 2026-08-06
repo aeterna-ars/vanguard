@@ -1760,12 +1760,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "vanguard-skmsg"
+version = "0.1.0"
+dependencies = [
+ "aya-ebpf",
+ "aya-log-ebpf",
+ "vanguard-core",
+]
+
+[[package]]
 name = "vanguard-sockmap"
 version = "0.1.0"
 dependencies = [
  "aya-ebpf",
  "aya-log-ebpf",
- "network-types",
  "vanguard-core",
 ]
 
