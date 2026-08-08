@@ -44,7 +44,7 @@ fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     let config = if let Some(ptr) = CONFIG.get_ptr(0) {
         unsafe { &*ptr }
     } else {
-        return Err(xdp_action::XDP_DROP);
+        return Err(xdp_action::XDP_PASS);
     };
 
     if maps::is_blocked(&addr, now) {

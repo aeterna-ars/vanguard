@@ -4,13 +4,10 @@
 mod maps;
 
 use aya_ebpf::{
-    macros::{map, socket_filter},
+    macros::{stream_parser, stream_verdict},
     maps::SockMap,
     programs::SkBuffContext,
-    bindings::{
-        sk_msg_md,
-        sk_action,
-    },
+    bindings::sk_action,
     helpers::bpf_msg_redirect_map,
 };
 
@@ -25,46 +22,40 @@ use vanguard_core::{
 
 use crate::maps::*;
 
-#[socket_filter]
-pub fn main(ctx: SkMsgContext) -> u32 {
-    match try_(ctx) {
+#[stream_parser]
+pub fn parser(ctx: SkBuffContext) -> u32 {
+    match try_parse(ctx) {
         Ok(act) => act,
         Err(act) => act,
     }
 }
 
 #[inline(always)]
-fn try_(ctx: SkMsgContext) -> Result<u32, u32> {
-    let msg = unsafe { &*ctx.msg };
+fn try_parse(ctx: SkBuffContext) -> Result<u32, u32> {
+    Ok(ctx.len())
+}
 
-    let mut local_ip = [0u8; 16];
-    let mut remote_ip = [0u8; 16];
-
-    match msg.family {
-        AF_INET => {
-            local_ip = EbpfIp::from_v4(msg.local_ip4.to_ne_bytes())?;
-            remote_ip = EbpfIp::from_v6(msg.remote_ip6.to_ne_bytes())?;
-        }
-        AF_INET6 => {
-            local_ip = EbpfIp::from_v6(msg.local_ip6.to_ne_bytes())?;
-            remote_ip = EbpfIp::from_v6(msg.remote_ip6.to_ne_bytes())?;
-        }
+#[stream_verdict]
+pub fn verdict(ctx: SkBuffContext) -> u32 {
+    match try_verdict(ctx) {
+        Ok(act) => act,
+        Err(act) => act,
     }
+}
 
-    let mut key = SockKey {
-        local_ip: EbpfIp(local_ip),
-        local_port: msg.local_port,
-        remote_ip: EbpfIp(remote_ip),
-        remote_port: msg.remote_port,
-        protocol: IpProto::Tcp,
-    };
+#[inline(always)]
+fn try_verdict(ctx: SkBuffContext) -> Result<u32, u32> {
+    let skb = ctx.as_ptr();
+
+    if skb.is_null() {
+        return Ok(sk_action::SK_PASS);
+    }
 
     unsafe {
-        match SOCK_HASH.redirect_msg(&ctx, &key, 0) {
-            Ok(_) => Ok(aya_ebpf::bindings::sk_action::SK_PASS),
-            Err(_) => Ok(aya_ebpf::bindings::sk_action::SK_PASS),
-        }
+
     }
+
+    Ok(sk_action::SK_PASS)
 }
 
 #[cfg(not(test))]

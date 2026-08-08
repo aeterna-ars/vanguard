@@ -14,7 +14,7 @@ use crate::inline::ptr_at;
 use crate::maps::*;
 
 #[inline(always)]
-pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(XdpIp, u32), u32> {
+pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(EbpfIp, u32), u32> {
     let ethhdr: *const EthHdr = match ptr_at(&ctx, offset) {
         Ok(hdr) => hdr,
         Err(_) => return Err(xdp_action::XDP_PASS),
@@ -26,12 +26,12 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(XdpIp, u32), u3
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_DROP),
             };
-            let src = XdpIp::from_v4(unsafe { (*iphdr).src_addr });
+            let src = EbpfIp::from_v4(unsafe { (*iphdr).src_addr });
             let ip_len = unsafe { (*iphdr).ihl() as usize * 4 };
             let proto = match unsafe { (*iphdr).proto() } {
                 Ok(p) => p,
                 Err(_) => {
-                    return Err(xdp_action::XDP_DROP)
+                    return Err(xdp_action::XDP_PASS)
                 }
             };
 
@@ -53,14 +53,14 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(XdpIp, u32), u3
         Ok(EtherType::Ipv6) => {
             let iphdr: *const Ipv6Hdr = match ptr_at(&ctx, EthHdr::LEN) {
                 Ok(hdr) => hdr,
-                Err(_) => return Err(xdp_action::XDP_DROP),
+                Err(_) => return Err(xdp_action::XDP_PASS),
             };
-            let src = XdpIp::from_v6(unsafe { (*iphdr).src_addr });
+            let src = EbpfIp::from_v6(unsafe { (*iphdr).src_addr });
             let ip_len = Ipv6Hdr::LEN;
             let proto = match unsafe { (*iphdr).next_hdr() } {
                 Ok(p) => p,
                 Err(_) => {
-                    return Err(xdp_action::XDP_DROP)
+                    return Err(xdp_action::XDP_PASS)
                 }
             };
 
@@ -80,7 +80,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(XdpIp, u32), u3
             Ok((src, xdp_action::XDP_PASS))
         },
         _ => {
-            return Err(xdp_action::XDP_DROP)
+            return Err(xdp_action::XDP_PASS)
         }
     }
 }

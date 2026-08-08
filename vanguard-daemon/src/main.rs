@@ -19,15 +19,12 @@ use libsystemd::daemon::{self, *};
 
 use vanguard_core::xdp::{
     brevno::*,
-    config::{
-        GrpcApi,
-        VanguardConfig
-    },
     erret_result::*,
     error::VanguardError,
     maps,
 };
 use vanguard_grpc::server::*;
+use vanguard_config::config::*;
 
 struct XdpDaemon {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -63,6 +60,10 @@ impl XdpDaemon {
         daemon.apply_cfg(cfg).await?;
 
         Ok(daemon)
+    }
+
+    async fn mount() -> ErrResult<()> {
+        
     }
 
     async fn init_logger(&mut self) -> ErrResult<()> {

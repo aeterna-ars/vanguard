@@ -27,14 +27,14 @@ use crate::maps::*;
 
 #[sk_msg]
 pub fn main(ctx: SkMsgContext) -> u32 {
-    match try_(ctx) {
+    match try_egress(ctx) {
         Ok(act) => act,
         Err(act) => act,
     }
 }
 
 #[inline(always)]
-fn try_(ctx: SkMsgContext) -> Result<u32, u32> {
+fn try_egress(ctx: SkMsgContext) -> Result<u32, u32> {
     let msg = unsafe { &*ctx.msg };
 
     let mut local_ip = [0u8; 16];

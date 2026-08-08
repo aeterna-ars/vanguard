@@ -1,11 +1,11 @@
 use std::net::SocketAddr;
 use serde::Deserialize;
-use erret_result::*;
-use super::maps::{
+use vanguard_core::erret_result::*;
+use vanguard_core::xdp::maps::{
     config::*,
     rules::*,
 };
-use crate::common::ip::*;
+use vanguard_core::common::ip::*;
 
 use self::serialize::*;
 
@@ -74,11 +74,11 @@ impl Default for GrpcApi {
 }
 
 mod serialize {
-    use network_types::{
+    use vanguard_core::network_types::{
         eth::EtherType,
         ip::IpProto,
     };
-    use crate::common::{common::*};
+    use vanguard_core::common::{common::*};
     use super::*;
     use serde::{Deserialize, Deserializer, de::Error};
 

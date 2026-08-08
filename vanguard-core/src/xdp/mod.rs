@@ -3,9 +3,6 @@
 pub mod maps;
 
 #[cfg(feature = "userspace")]
-pub mod config;
-
-#[cfg(feature = "userspace")]
 pub mod error;
 
 pub use network_types;

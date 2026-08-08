@@ -13,10 +13,13 @@ pub struct SockKey {
     pub protocol: IpProto,
 }
 
+#[cfg(feature = "userspace")]
+unsafe impl crate::common::common::Pod for SockKey {}
+
 pub struct SockMapMap;
 impl SockMapMap {
-    fn get(bpf: &mut Ebpf) -> ErrResult<SockMap<SockKey>> {
-        get_map!(bpf, "SOCK_MAP", SockMap, SockMap<SockKey>)
+    fn get(bpf: &mut Ebpf) -> ErrResult<SockMap<MapData>> {
+        get_map!(bpf, "SOCK_MAP", SockMap, SockMap<MapData>)
     }
 
     fn add() -> ErrResult<()> {
@@ -28,8 +31,8 @@ impl SockMapMap {
 
 pub struct SockHashMap;
 impl SockHashMap {
-    fn get(bpf: &mut Ebpf) -> ErrResult<SockHash<std::os::fd::RawFd, SockKey>> {
-        get_map!(bpf, "SOCK_HASH", SockHash, SockHash<SockKey>)
+    fn get(bpf: &mut Ebpf) -> ErrResult<SockHash<MapData, SockKey>> {
+        get_map!(bpf, "SOCK_HASH", SockHash, SockHash<MapData, SockKey>)
     }
 
     fn add() -> ErrResult<()> {

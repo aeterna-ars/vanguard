@@ -3,26 +3,28 @@ pub use aya_ebpf::{
     maps::{HashMap, LruPerCpuHashMap, Array, PerCpuArray, lpm_trie::*},
 };
 
-pub use vanguard_core::maps::{
-    config::XdpConfig,
-    ip::{XdpIp, XdpNet},
-    blacklist::XdpBlockEntry,
-    counter::XdpCounter,
-    rules::{XdpRuleValue, XdpRuleKey}
+pub use vanguard_core::{
+    xdp::maps::{
+        config::XdpConfig,
+        blacklist::XdpBlockEntry,
+        counter::XdpCounter,
+        rules::{XdpRuleValue, XdpRuleKey}
+    },
+    common::ip::*,
 };
 
 #[map]
 pub static CONFIG: Array<XdpConfig> = Array::<XdpConfig>::with_max_entries(1, 0);
 
 #[map]
-pub static BLACKLIST: LpmTrie<XdpIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0);
+pub static BLACKLIST: LpmTrie<EbpfIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0);
 #[inline(always)]
-pub fn block_ip(addr: &XdpNet, now: u64, config: &XdpConfig) {
+pub fn block_ip(addr: &EbpfNet, now: u64, config: &XdpConfig) {
     let entry = XdpBlockEntry {
         blocked_until: config.block_time + now,
     };
 
-    let key: Key<XdpIp> = Key {
+    let key: Key<EbpfIp> = Key {
         prefix_len: addr.prefix_len,
         data: addr.ip,
     };
@@ -30,8 +32,8 @@ pub fn block_ip(addr: &XdpNet, now: u64, config: &XdpConfig) {
     let _ = BLACKLIST.insert(key, &entry, 0);
 }
 #[inline(always)]
-pub fn is_blocked(ip: &XdpNet, now: u64) -> bool {
-    let key: Key<XdpIp> = Key {
+pub fn is_blocked(ip: &EbpfNet, now: u64) -> bool {
+    let key: Key<EbpfIp> = Key {
         prefix_len: ip.prefix_len,
         data: ip.ip,
     };
@@ -50,16 +52,16 @@ pub fn is_blocked(ip: &XdpNet, now: u64) -> bool {
 }
 
 #[map]
-pub static WHITELIST: LpmTrie<XdpIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0); // u8 is nothing
+pub static WHITELIST: LpmTrie<EbpfIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0); // u8 is nothing
 
 #[map]
 pub static RULES: HashMap<XdpRuleKey, XdpRuleValue> = HashMap::with_max_entries(65536, 0);
 
 #[map]
-pub static PACKET_COUNTER: LruPerCpuHashMap<XdpIp, XdpCounter> = LruPerCpuHashMap::with_max_entries(65536, 0);
+pub static PACKET_COUNTER: LruPerCpuHashMap<EbpfIp, XdpCounter> = LruPerCpuHashMap::with_max_entries(65536, 0);
 pub const RESET_INTERVAL: u64 = 1_000_000_000;
 #[inline(always)]
-pub fn check_limit(ip: &XdpIp, now: u64, config: &XdpConfig) -> bool {
+pub fn check_limit(ip: &EbpfIp, now: u64, config: &XdpConfig) -> bool {
     unsafe {
         if let Some(ptr) = PACKET_COUNTER.get_ptr_mut(ip) {
             let counter = &mut *ptr;

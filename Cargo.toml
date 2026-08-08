@@ -2,11 +2,12 @@
 members = [
     "vanguard-core",
     "vanguard-xdp",
-    "vanguard-skmsg",
     "vanguard-skb",
+    "vanguard-msg",
     "vanguard-daemon",
     "vanguard-cli",
     "vanguard-grpc",
+    "vanguard-config",
 ]
 resolver = "3"
 

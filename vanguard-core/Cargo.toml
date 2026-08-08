@@ -6,9 +6,6 @@ edition.workspace = true
 [dependencies]
 aya = { workspace = true, optional = true }
 network-types = { workspace = true }
-serde = { workspace = true, features = ["derive"], optional = true }
-serde_yaml = { workspace = true, optional = true }
-
 erret-macro = { workspace = true, optional = true }
 erret-result = { workspace = true, optional = true }
 brevno = { workspace = true, optional = true }
@@ -17,8 +14,6 @@ brevno = { workspace = true, optional = true }
 default = ["userspace"]
 userspace = [
     "dep:aya",
-    "dep:serde",
-    "dep:serde_yaml",
     "dep:brevno",
     "dep:erret-result",
     "dep:erret-macro",

@@ -7,10 +7,12 @@ use super::vanguard_api::{
     *,
 };
 
-use vanguard_core::xdp::maps::{
-    rules::*,
-    common::Parse,
-    stats::*,
+use vanguard_core::{
+    xdp::maps::{
+        rules::*,
+        stats::*,
+    },
+    common::common::Parse,
 };
 use vanguard_core::erret_result::*;
 

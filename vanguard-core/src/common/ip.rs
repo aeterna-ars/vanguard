@@ -203,3 +203,41 @@ mod test_ip {
         assert!(EbpfIp::to_type(with_port).is_err());
     }
 }
+
+#[cfg(test)]
+mod test_net {
+    use super::*;
+
+    #[test]
+    fn test_ipv4_cidr_round_trip() {
+        let net = EbpfNet::to_type("192.168.1.0/24".to_string()).unwrap();
+
+        assert_eq!(net.ip.as_str(), "192.168.1.0");
+        assert_eq!(net.as_str(), "192.168.1.0/24");
+        assert_eq!(net.prefix_len, 120);
+    }
+
+    #[test]
+    fn test_ipv6_cidr_round_trip() {
+        let net = EbpfNet::to_type("2001:db8::/64".to_string()).unwrap();
+
+        assert_eq!(net.ip.as_str(), "2001:db8::");
+        assert_eq!(net.as_str(), "2001:db8::/64");
+        assert_eq!(net.prefix_len, 64);
+    }
+
+    #[test]
+    fn test_default_prefix_for_ip_without_cidr() {
+        let net = EbpfNet::to_type("10.0.0.5".to_string()).unwrap();
+
+        assert_eq!(net.as_str(), "10.0.0.5/32");
+        assert_eq!(net.prefix_len, 128);
+    }
+
+    #[test]
+    fn test_invalid_prefix_is_rejected() {
+        assert!(EbpfNet::to_type("192.168.1.0/33".to_string()).is_err());
+        assert!(EbpfNet::to_type("2001:db8::/129".to_string()).is_err());
+        assert!(EbpfNet::to_type("10.0.0.0/not-a-prefix".to_string()).is_err());
+    }
+}

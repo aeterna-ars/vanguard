@@ -1721,6 +1721,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "vanguard-config"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_yaml",
+ "vanguard-core",
+]
+
+[[package]]
 name = "vanguard-core"
 version = "0.1.0"
 dependencies = [
@@ -1729,8 +1738,6 @@ dependencies = [
  "erret-macro",
  "erret-result",
  "network-types",
- "serde",
- "serde_yaml",
 ]
 
 [[package]]
@@ -1742,6 +1749,7 @@ dependencies = [
  "env_logger",
  "libsystemd",
  "tokio",
+ "vanguard-config",
  "vanguard-core",
  "vanguard-grpc",
 ]

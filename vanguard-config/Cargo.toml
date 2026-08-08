@@ -1,0 +1,9 @@
+[package]
+name = "vanguard-config"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+vanguard-core = { path = "../vanguard-core", default-features = false }

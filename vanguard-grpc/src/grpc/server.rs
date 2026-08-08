@@ -8,14 +8,18 @@ use tonic::{transport::Server, Request, Response, Status};
 
 use super::vanguard_api::{vanguard_server::*, *};
 
-use vanguard_core::xdp::maps::{
-    rules::*,
-    common::*,
-    stats::*,
-    config::*,
-    ip::*,
-    blacklist::*,
-    whitelist::*,
+use vanguard_core::{
+    xdp::maps::{
+        rules::*,
+        stats::*,
+        config::*,
+        blacklist::*,
+        whitelist::*,
+    },
+    common::{
+        common::{Parse, IpProto, EtherType},
+        ip::*
+    }
 };
 use vanguard_core::{
     erret_result::*,
@@ -81,7 +85,7 @@ impl Vanguard for VanguardService {
         let req = request.into_inner();
         info!("Blacklist request: {}, until {}", req.ip, req.block_until);
 
-        let ip = XdpNet::to_type(req.ip)
+        let ip = EbpfNet::to_type(req.ip)
             .map_err(|e| Status::invalid_argument(format!("invalid IP: {e}")))?;
 
         let mut bpf = self.bpf.lock().await;
@@ -99,7 +103,7 @@ impl Vanguard for VanguardService {
         let req = request.into_inner();
         info!("Whitelist request: {}", req.ip);
 
-        let ip = XdpNet::to_type(req.ip)
+        let ip = EbpfNet::to_type(req.ip)
             .map_err(|e| Status::invalid_argument(format!("invalid IP: {e}")))?;
 
         let mut bpf = self.bpf.lock().await;
@@ -210,7 +214,7 @@ impl Vanguard for VanguardService {
 
 fn parse_rule_key(key: RuleKey) -> Result<XdpRuleKey, Status> {
     Ok(XdpRuleKey {
-        ip: XdpIp::to_type(key.ip).map_err(|e| Status::invalid_argument(format!("{e}")))?,
+        ip: EbpfIp::to_type(key.ip).map_err(|e| Status::invalid_argument(format!("{e}")))?,
         port: u16::try_from(key.port).map_err(|e| Status::invalid_argument(format!("{e}")))?,
         eth: EtherType::to_type(key.eth).map_err(|e| Status::invalid_argument(format!("{e}")))?,
         proto: IpProto::to_type(key.proto).map_err(|e| Status::invalid_argument(format!("{e}")))?,

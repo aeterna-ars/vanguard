@@ -11,6 +11,7 @@ tokio = { workspace = true, features = ["full"] }
 libsystemd = { workspace = true }
 vanguard-core = { path = "../vanguard-core" }
 vanguard-grpc = { path = "../vanguard-grpc" }
+vanguard-config = { path = "../vanguard-config" }
 
 [features]
 default = []
