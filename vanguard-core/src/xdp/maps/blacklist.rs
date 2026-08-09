@@ -40,7 +40,7 @@ impl BlocklistMap {
             return Ok(());
         } else {
             let key: Key<EbpfIp> = Key::new(ip.prefix_len, ip.ip);
-            map.insert(&key, &XdpBlockEntry { blocked_until: now + duration }, 0)?;
+            map.insert(&key, XdpBlockEntry { blocked_until: now + duration }, 0)?;
         }
 
         Ok(())

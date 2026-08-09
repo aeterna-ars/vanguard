@@ -25,17 +25,12 @@ impl ConfigMap {
     pub fn read(bpf: &mut Ebpf) -> ErrResult<XdpConfig> {
         let map = Self::get(bpf)?;
         let mp = map.get(&0, 0)?;
-        let mp = XdpConfig::from(mp);
         Ok(mp)
     }
 
     pub fn write(bpf: &mut Ebpf, config: XdpConfig) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
-
-        let config = XdpConfig::from(config);
-
         map.set(0, config, 0)?;
-
         Ok(())
     }
 }

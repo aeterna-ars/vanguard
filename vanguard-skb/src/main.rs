@@ -2,13 +2,12 @@
 #![no_main]
 
 mod maps;
+use maps::*;
 
 use aya_ebpf::{
-    macros::{stream_parser, stream_verdict},
-    maps::SockMap,
-    programs::SkBuffContext,
     bindings::sk_action,
-    helpers::bpf_msg_redirect_map,
+    macros::{stream_parser, stream_verdict},
+    programs::SkBuffContext,
 };
 
 use vanguard_core::{
@@ -20,10 +19,8 @@ use vanguard_core::{
     sk::maps::socks::SockKey,
 };
 
-use crate::maps::*;
-
 #[stream_parser]
-pub fn parser(ctx: SkBuffContext) -> u32 {
+fn parser(ctx: SkBuffContext) -> u32 {
     match try_parse(ctx) {
         Ok(act) => act,
         Err(act) => act,
@@ -36,7 +33,7 @@ fn try_parse(ctx: SkBuffContext) -> Result<u32, u32> {
 }
 
 #[stream_verdict]
-pub fn verdict(ctx: SkBuffContext) -> u32 {
+fn verdict(ctx: SkBuffContext) -> u32 {
     match try_verdict(ctx) {
         Ok(act) => act,
         Err(act) => act,
@@ -45,21 +42,32 @@ pub fn verdict(ctx: SkBuffContext) -> u32 {
 
 #[inline(always)]
 fn try_verdict(ctx: SkBuffContext) -> Result<u32, u32> {
-    let skb = ctx.as_ptr();
+    let buf = &ctx.skb;
 
-    if skb.is_null() {
-        return Ok(sk_action::SK_PASS);
+    let mut local_ip: EbpfIp = unsafe { core::mem::zeroed() };
+    let mut remote_ip: EbpfIp = unsafe { core::mem::zeroed() };
+
+    match buf.family() {
+        AF_INET => {
+            local_ip = EbpfIp::from_v4(buf.local_ipv4().to_ne_bytes());
+            remote_ip = EbpfIp::from_v4(buf.remote_ipv4().to_ne_bytes());
+        }
+        AF_INET6 => {
+            local_ip = EbpfIp::from_v6(*buf.local_ipv6());
+            remote_ip = EbpfIp::from_v6(*buf.remote_ipv6());
+        }
+        _ => {}
     }
 
-    unsafe {
+    let key = SockKey {
+        local_ip,
+        local_port: buf.local_port(),
+        remote_ip,
+        remote_port: buf.remote_port(),
+        protocol: IpProto::Tcp,
+    };
 
-    }
+    SOCK_HASH.redirect_skb(ctx, key, 0);
 
     Ok(sk_action::SK_PASS)
-}
-
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    unsafe { core::hint::unreachable_unchecked() }
 }

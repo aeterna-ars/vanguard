@@ -9,16 +9,13 @@ pub struct WhitelistMap;
 
 #[cfg(feature = "userspace")]
 impl WhitelistMap {
-    fn get(bpf: &mut Ebpf) -> ErrResult<LpmTrie<MapData, EbpfIp, u8>> {
-        get_map!(bpf, "WHITELIST", LpmTrie, LpmTrie<MapData, EbpfIp, u8>)
+    fn get(bpf: &mut Ebpf) -> ErrResult<LpmTrie<MapData, EbpfNet, u8>> {
+        get_map!(bpf, "WHITELIST", LpmTrie, LpmTrie<MapData, EbpfNet, u8>)
     }
 
-    fn is_white(map: &LpmTrie<MapData, EbpfIp, u8>, ip: EbpfNet) -> bool {
+    fn is_white(map: &LpmTrie<MapData, EbpfNet, u8>, ip: EbpfNet) -> bool {
         let key: Key<EbpfIp> = Key::new(ip.prefix_len, ip.ip);
-        match map.get(&key, 0) {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+        map.get(&key, 0).is_ok()
     }
 
     pub fn insert(bpf: &mut Ebpf, ip: EbpfNet) -> ErrResult<()> {

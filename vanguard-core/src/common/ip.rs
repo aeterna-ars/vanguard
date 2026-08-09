@@ -7,6 +7,9 @@ use erret_result::ErrResult;
 #[cfg(feature = "userspace")]
 use crate::xdp::error::*;
 
+use std::net::*;
+use std::str::FromStr;
+
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct EbpfNet {
@@ -21,10 +24,8 @@ impl Parse for EbpfNet {
     fn as_str(&self) -> String {
         let ip_str = self.ip.as_str();
         
-        let bytes = self.ip.0;
-        let is_v4 = bytes[10] == 0xFF 
-            && bytes[11] == 0xFF 
-            && bytes[0..10].iter().all(|&b| b == 0);
+        let words = self.ip.0;
+        let is_v4 = words[0] == 0 && words[1] == 0 && words[2] == 0;
 
         let prefix = if is_v4 {
             self.prefix_len.saturating_sub(96)
@@ -36,12 +37,9 @@ impl Parse for EbpfNet {
     }
 
     fn to_type(s: String) -> ErrResult<Self> {
-        use std::net::IpAddr;
-        use std::str::FromStr;
-
         let s = s.trim();
         let mut parts = s.split('/');
-        let ip_str = parts.next().ok_or_else(|| VanguardError::Io("empty IP string"))?;
+        let ip_str = parts.next().ok_or(VanguardError::Io("empty IP string"))?;
 
         let ip_addr = IpAddr::from_str(ip_str)
             .map_err(|_| VanguardError::Io("invalid IP format"))?;
@@ -88,7 +86,9 @@ impl Parse for EbpfNet {
                     }
                 }
                 
-                let ip = EbpfIp::from_v6(octets);
+                let octets_u32: [u32; 4] = unsafe { core::mem::transmute(octets) };
+                let ip = EbpfIp::from_v6(octets_u32);
+
                 (ip, raw_prefix)
             }
         };
@@ -102,20 +102,15 @@ impl Parse for EbpfNet {
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct EbpfIp(pub [u8; 16]);
+pub struct EbpfIp(pub [u32; 4]);
 impl EbpfIp {
     pub fn from_v4(v4: [u8; 4]) -> Self {
-        let mut bytes = [0u8; 16];
-        bytes[10] = 0xFF;
-        bytes[11] = 0xFF;
-        bytes[12] = v4[0];
-        bytes[13] = v4[1];
-        bytes[14] = v4[2];
-        bytes[15] = v4[3];
+        let mut bytes = [0u32; 4];
+        bytes[3] = u32::from_be_bytes(v4);
         Self(bytes)
     }
 
-    pub fn from_v6(v6: [u8; 16]) -> Self {
+    pub fn from_v6(v6: [u32; 4]) -> Self {
         Self(v6)
     }
 }
@@ -125,17 +120,16 @@ unsafe impl Pod for EbpfIp {}
 #[cfg(feature = "userspace")]
 impl Parse for EbpfIp {
     fn as_str(&self) -> String {
-        let bytes = self.0;
+        let words = self.0;
         
-        let is_v4 = bytes[10] == 0xFF 
-            && bytes[11] == 0xFF 
-            && bytes[0..10].iter().all(|&b| b == 0);
+        let is_v4 = words[0] == 0 && words[1] == 0 && words[2] == 0;
 
         if is_v4 {
-            format!("{}.{}.{}.{}", bytes[12], bytes[13], bytes[14], bytes[15])
+            let ip_bytes = words[3].to_be_bytes();
+            format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3])
         } else {
-            use std::net::Ipv6Addr;
-            let ipv6 = Ipv6Addr::from(bytes);
+            let octets_u8: [u8; 16] = unsafe { core::mem::transmute(words) };
+            let ipv6 = Ipv6Addr::from(octets_u8);
             ipv6.to_string()
         }
     }
@@ -149,7 +143,11 @@ impl Parse for EbpfIp {
 
         match ip {
             IpAddr::V4(v4) => Ok(EbpfIp::from_v4(v4.octets())),
-            IpAddr::V6(v6) => Ok(EbpfIp::from_v6(v6.octets())),
+            IpAddr::V6(v6) => {
+                let octets = v6.octets();
+                let octets_u32: [u32; 4] = unsafe { core::mem::transmute(octets) };
+                Ok(EbpfIp::from_v6(octets_u32))
+            }
         }
     }
 }
@@ -164,12 +162,12 @@ mod test_ip {
         
         let xdp_ip = EbpfIp::to_type(ip_str).unwrap();
         
-        assert_eq!(xdp_ip.0[10], 0xFF);
-        assert_eq!(xdp_ip.0[11], 0xFF);
-        assert_eq!(xdp_ip.0[12], 192);
-        assert_eq!(xdp_ip.0[13], 168);
-        assert_eq!(xdp_ip.0[14], 1);
-        assert_eq!(xdp_ip.0[15], 1);
+        assert_eq!(xdp_ip.0[0], 0);
+        assert_eq!(xdp_ip.0[1], 0);
+        assert_eq!(xdp_ip.0[2], 0);
+        
+        let expected_u32 = u32::from_be_bytes([192, 168, 1, 1]);
+        assert_eq!(xdp_ip.0[3], expected_u32);
 
         assert_eq!(xdp_ip.as_str(), "192.168.1.1");
     }
@@ -214,6 +212,7 @@ mod test_net {
 
         assert_eq!(net.ip.as_str(), "192.168.1.0");
         assert_eq!(net.as_str(), "192.168.1.0/24");
+        
         assert_eq!(net.prefix_len, 120);
     }
 
@@ -231,6 +230,7 @@ mod test_net {
         let net = EbpfNet::to_type("10.0.0.5".to_string()).unwrap();
 
         assert_eq!(net.as_str(), "10.0.0.5/32");
+        
         assert_eq!(net.prefix_len, 128);
     }
 

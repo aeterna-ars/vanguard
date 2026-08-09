@@ -1,3 +1,5 @@
+use std::os::fd::AsRawFd;
+
 use crate::common::{ip::*, common::*};
 
 #[cfg(feature = "userspace")]
@@ -22,9 +24,9 @@ impl SockMapMap {
         get_map!(bpf, "SOCK_MAP", SockMap, SockMap<MapData>)
     }
 
-    fn add() -> ErrResult<()> {
-
-
+    fn add(bpf: &mut Ebpf, index: u32, socket: impl AsRawFd) -> ErrResult<()> {
+        let mut map = Self::get(bpf)?;
+        map.set(index, &socket, 0)?;
         Ok(())
     }
 }
@@ -35,9 +37,9 @@ impl SockHashMap {
         get_map!(bpf, "SOCK_HASH", SockHash, SockHash<MapData, SockKey>)
     }
 
-    fn add() -> ErrResult<()> {
-        
-
+    fn add(bpf: &mut Ebpf, key: SockKey, value: impl AsRawFd) -> ErrResult<()> {
+        let mut map = Self::get(bpf)?;
+        map.insert(key, value, 0)?;
         Ok(())
     }
 }

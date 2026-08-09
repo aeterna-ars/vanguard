@@ -35,6 +35,11 @@ pub fn main(ctx: XdpContext) -> u32 {
 fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     let (addr, action) = parse::try_filter_ip(&ctx, 0)?;
 
+    let net_key = EbpfNet {
+        ip: addr,
+        prefix_len: 128,
+    };
+
     if maps::WHITELIST.get(&addr).is_some() {
         return Ok(action)
     }
@@ -55,10 +60,4 @@ fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     }
 
     Ok(action)
-}
-
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    unsafe { core::hint::unreachable_unchecked() }
 }

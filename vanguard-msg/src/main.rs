@@ -4,14 +4,11 @@
 mod maps;
 
 use aya_ebpf::{
-    macros::{map, sk_msg},
-    maps::SockMap,
+    macros::sk_msg,
     programs::SkMsgContext,
     bindings::{
-        sk_msg_md,
         sk_action,
     },
-    helpers::bpf_msg_redirect_map,
 };
 
 use vanguard_core::{
@@ -37,38 +34,30 @@ pub fn main(ctx: SkMsgContext) -> u32 {
 fn try_egress(ctx: SkMsgContext) -> Result<u32, u32> {
     let msg = unsafe { &*ctx.msg };
 
-    let mut local_ip = [0u8; 16];
-    let mut remote_ip = [0u8; 16];
+    let mut local_ip: EbpfIp = unsafe { core::mem::zeroed() };
+    let mut remote_ip: EbpfIp = unsafe { core::mem::zeroed() };
 
     match msg.family {
         AF_INET => {
-            local_ip = EbpfIp::from_v4(msg.local_ip4.to_ne_bytes())?;
-            remote_ip = EbpfIp::from_v6(msg.remote_ip6.to_ne_bytes())?;
+            local_ip = EbpfIp::from_v4(msg.local_ip4.to_ne_bytes());
+            remote_ip = EbpfIp::from_v4(msg.remote_ip4.to_ne_bytes());
         }
         AF_INET6 => {
-            local_ip = EbpfIp::from_v6(msg.local_ip6.to_ne_bytes())?;
-            remote_ip = EbpfIp::from_v6(msg.remote_ip6.to_ne_bytes())?;
+            local_ip = EbpfIp::from_v6(msg.local_ip6);
+            remote_ip = EbpfIp::from_v6(msg.remote_ip6);
         }
+        _ => {}
     }
 
-    let mut key = SockKey {
-        local_ip: EbpfIp(local_ip),
+    let key = SockKey {
+        local_ip,
         local_port: msg.local_port,
-        remote_ip: EbpfIp(remote_ip),
+        remote_ip,
         remote_port: msg.remote_port,
         protocol: IpProto::Tcp,
     };
 
-    unsafe {
-        match SOCK_HASH.redirect_msg(&ctx, &key, 0) {
-            Ok(_) => Ok(aya_ebpf::bindings::sk_action::SK_PASS),
-            Err(_) => Ok(aya_ebpf::bindings::sk_action::SK_PASS),
-        }
-    }
-}
+    SOCK_HASH.redirect_msg(ctx, key, 0);
 
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    unsafe { core::hint::unreachable_unchecked() }
+    Ok(sk_action::SK_PASS)
 }

@@ -78,17 +78,12 @@ impl RulesMap {
     pub fn add(bpf: &mut Ebpf, key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
 
-        let key = XdpRuleKey::from(key);
-        let value = XdpRuleValue::from(value);
-
-        map.insert(&key, value, 0)?;
+        map.insert(key, value, 0)?;
         Ok(())
     }
 
     pub fn remove(bpf: &mut Ebpf, key: XdpRuleKey) -> ErrResult<()> {
         let mut map = Self::get(bpf)?;
-
-        let key = XdpRuleKey::from(key);
 
         map.remove(&key)?;
         Ok(())

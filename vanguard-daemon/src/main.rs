@@ -42,6 +42,7 @@ impl XdpDaemon {
 
         let mut bpf = EbpfLoader::new()
             .verifier_log_level(VerifierLogLevel::all()) 
+            .default_map_pin_directory("/sys/fs/bpf/vanguard")
             .load(aya::include_bytes_aligned!("../../target/bpfel-unknown-none/release/vanguard-xdp"))?;
 
         let program: &mut Xdp = bpf.program_mut("main").unwrap().try_into()?;
@@ -63,7 +64,9 @@ impl XdpDaemon {
     }
 
     async fn mount() -> ErrResult<()> {
-        
+        std::fs::create_dir_all("/sys/fs/bpf/vanguard")?;
+
+        Ok(())
     }
 
     async fn init_logger(&mut self) -> ErrResult<()> {
