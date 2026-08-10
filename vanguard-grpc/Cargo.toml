@@ -10,6 +10,7 @@ tonic = { workspace = true }
 tonic-prost = { workspace = true }
 prost = { workspace = true }
 vanguard-core = { path = "../vanguard-core" }
+erret-result = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }

@@ -1,11 +1,11 @@
 use std::net::SocketAddr;
 use serde::Deserialize;
-use vanguard_core::erret_result::*;
 use vanguard_core::xdp::maps::{
     config::*,
     rules::*,
 };
 use vanguard_core::common::ip::*;
+use erret_result::*;
 
 use self::serialize::*;
 
@@ -13,6 +13,8 @@ use self::serialize::*;
 pub struct VanguardConfig {
     #[serde(default = "default_iface")]
     pub iface: String,
+
+    pub maps: EbpfMaps,
 
     #[serde(deserialize_with = "deserialize_config")]
     pub config: XdpConfig,
@@ -39,6 +41,16 @@ impl VanguardConfig {
 }
 
 fn default_iface() -> String { "eth0".to_string() }
+
+#[derive(Deserialize)]
+pub struct EbpfMaps {
+    pub pin: bool,
+
+    #[serde(default = "default_pin_path")]
+    pub path: String,
+}
+
+fn default_pin_path() -> String { "/sys/fs/bpf/vanguard".to_string() }
 
 #[derive(Deserialize)]
 pub struct BlockConfig {
@@ -78,7 +90,7 @@ mod serialize {
         eth::EtherType,
         ip::IpProto,
     };
-    use vanguard_core::common::{common::*};
+    use vanguard_core::common::{commons::*};
     use super::*;
     use serde::{Deserialize, Deserializer, de::Error};
 
@@ -122,7 +134,7 @@ mod serialize {
         fn try_from(w: XdpRuleKeyWrapper) -> Result<Self, Self::Error> {
             Ok(XdpRuleKey {
                 ip: EbpfIp::to_type(w.ip)?,
-                port: w.port,
+                port: w.port as u32,
                 eth: EtherType::to_type(w.eth)?,
                 proto: IpProto::to_type(w.proto)?,
             })

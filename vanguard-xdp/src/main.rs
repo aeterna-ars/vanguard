@@ -2,7 +2,6 @@
 #![no_main]
 
 mod parse;
-mod inline;
 mod maps;
 
 use aya_ebpf::{
@@ -33,29 +32,28 @@ pub fn main(ctx: XdpContext) -> u32 {
 
 #[inline(always)]
 fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
-    let (addr, action) = parse::try_filter_ip(&ctx, 0)?;
+    let (addr, action) = parse::try_parse_ip(&ctx, 0)?;
 
-    let net_key = EbpfNet {
-        ip: addr,
-        prefix_len: 128,
-    };
-
-    if maps::WHITELIST.get(&addr).is_some() {
+    if maps::is_white(&addr) {
         return Ok(action)
     }
-
-    let now = unsafe { bpf_ktime_get_coarse_ns() };
-
+    
     let config = if let Some(ptr) = CONFIG.get_ptr(0) {
         unsafe { &*ptr }
     } else {
         return Err(xdp_action::XDP_PASS);
     };
 
+    let now = unsafe { bpf_ktime_get_coarse_ns() };
+
     if maps::is_blocked(&addr, now) {
         return Err(xdp_action::XDP_DROP);
     } else if !maps::check_limit(&addr, now, config) {
-        maps::block_ip(&addr, now, config);
+        if let Some(mut buf) = maps::BLOCK_EVENT.reserve::<BlockEvent>(0) {
+            let event = unsafe { &mut *buf.as_mut_ptr() };
+            event.ip = EbpfNet { ip: addr, prefix_len: 32 };
+            buf.submit(0);
+        }
         return Err(xdp_action::XDP_DROP)
     }
 

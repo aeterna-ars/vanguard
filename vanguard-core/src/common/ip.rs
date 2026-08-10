@@ -1,11 +1,8 @@
 #[cfg(feature = "userspace")]
-use super::common::*;
+use super::commons::*;
 
 #[cfg(feature = "userspace")]
-use erret_result::ErrResult;
-
-#[cfg(feature = "userspace")]
-use crate::xdp::error::*;
+use crate::error::VanguardError;
 
 use std::net::*;
 use std::str::FromStr;
@@ -21,8 +18,8 @@ unsafe impl Pod for EbpfNet {}
 
 #[cfg(feature = "userspace")]
 impl Parse for EbpfNet {
-    fn as_str(&self) -> String {
-        let ip_str = self.ip.as_str();
+    fn as_str(&self) -> Result<String, VanguardError> {
+        let ip_str = self.ip.as_str()?;
         
         let words = self.ip.0;
         let is_v4 = words[0] == 0 && words[1] == 0 && words[2] == 0;
@@ -33,19 +30,19 @@ impl Parse for EbpfNet {
             self.prefix_len
         };
 
-        format!("{}/{}", ip_str, prefix)
+        Ok(format!("{}/{}", ip_str, prefix))
     }
 
-    fn to_type(s: String) -> ErrResult<Self> {
+    fn to_type(s: String) -> Result<Self, VanguardError> {
         let s = s.trim();
         let mut parts = s.split('/');
-        let ip_str = parts.next().ok_or(VanguardError::Io("empty IP string"))?;
+        let ip_str = parts.next().ok_or(VanguardError::IoError("empty IP string"))?;
 
         let ip_addr = IpAddr::from_str(ip_str)
-            .map_err(|_| VanguardError::Io("invalid IP format"))?;
+            .map_err(|_| VanguardError::IoError("invalid IP format"))?;
 
         let raw_prefix = match parts.next() {
-            Some(p_str) => p_str.parse::<u32>().map_err(|_| VanguardError::Io("invalid CIDR prefix"))?,
+            Some(p_str) => p_str.parse::<u32>().map_err(|_| VanguardError::IoError("invalid CIDR prefix"))?,
             None => match ip_addr {
                 IpAddr::V4(_) => 32,
                 IpAddr::V6(_) => 128,
@@ -53,8 +50,8 @@ impl Parse for EbpfNet {
         };
 
         match ip_addr {
-            IpAddr::V4(_) if raw_prefix > 32 => return Err(VanguardError::Io("IPv4 prefix cant be > 32").into()),
-            IpAddr::V6(_) if raw_prefix > 128 => return Err(VanguardError::Io("IPv6 prefix cant be > 128").into()),
+            IpAddr::V4(_) if raw_prefix > 32 => return Err(VanguardError::IoError("IPv4 prefix cant be > 32")),
+            IpAddr::V6(_) if raw_prefix > 128 => return Err(VanguardError::IoError("IPv6 prefix cant be > 128")),
             _ => {}
         }
 
@@ -119,27 +116,27 @@ unsafe impl Pod for EbpfIp {}
 
 #[cfg(feature = "userspace")]
 impl Parse for EbpfIp {
-    fn as_str(&self) -> String {
+    fn as_str(&self) -> Result<String, VanguardError> {
         let words = self.0;
         
         let is_v4 = words[0] == 0 && words[1] == 0 && words[2] == 0;
 
         if is_v4 {
             let ip_bytes = words[3].to_be_bytes();
-            format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3])
+            Ok(format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]))
         } else {
             let octets_u8: [u8; 16] = unsafe { core::mem::transmute(words) };
             let ipv6 = Ipv6Addr::from(octets_u8);
-            ipv6.to_string()
+            Ok(ipv6.to_string())
         }
     }
 
-    fn to_type(s: String) -> ErrResult<Self> {
+    fn to_type(s: String) -> Result<Self, VanguardError> {
         use std::net::IpAddr;
         use std::str::FromStr;
 
         let ip = IpAddr::from_str(s.trim())
-            .map_err(|_| VanguardError::Io("invalid IP format"))?;
+            .map_err(|_| VanguardError::IoError("invalid IP format"))?;
 
         match ip {
             IpAddr::V4(v4) => Ok(EbpfIp::from_v4(v4.octets())),
@@ -169,7 +166,7 @@ mod test_ip {
         let expected_u32 = u32::from_be_bytes([192, 168, 1, 1]);
         assert_eq!(xdp_ip.0[3], expected_u32);
 
-        assert_eq!(xdp_ip.as_str(), "192.168.1.1");
+        assert_eq!(xdp_ip.as_str().unwrap(), "192.168.1.1");
     }
 
     #[test]
@@ -178,7 +175,7 @@ mod test_ip {
         
         let xdp_ip = EbpfIp::to_type(ip_str).unwrap();
         
-        assert_eq!(xdp_ip.as_str(), "2001:db8::1");
+        assert_eq!(xdp_ip.as_str().unwrap(), "2001:db8::1");
     }
 
     #[test]
@@ -186,7 +183,7 @@ mod test_ip {
         let ip_str = "  10.0.0.5 \n".to_string();
         let xdp_ip = EbpfIp::to_type(ip_str).unwrap();
         
-        assert_eq!(xdp_ip.as_str(), "10.0.0.5");
+        assert_eq!(xdp_ip.as_str().unwrap(), "10.0.0.5");
     }
 
     #[test]
@@ -210,8 +207,8 @@ mod test_net {
     fn test_ipv4_cidr_round_trip() {
         let net = EbpfNet::to_type("192.168.1.0/24".to_string()).unwrap();
 
-        assert_eq!(net.ip.as_str(), "192.168.1.0");
-        assert_eq!(net.as_str(), "192.168.1.0/24");
+        assert_eq!(net.ip.as_str().unwrap(), "192.168.1.0");
+        assert_eq!(net.as_str().unwrap(), "192.168.1.0/24");
         
         assert_eq!(net.prefix_len, 120);
     }
@@ -220,8 +217,8 @@ mod test_net {
     fn test_ipv6_cidr_round_trip() {
         let net = EbpfNet::to_type("2001:db8::/64".to_string()).unwrap();
 
-        assert_eq!(net.ip.as_str(), "2001:db8::");
-        assert_eq!(net.as_str(), "2001:db8::/64");
+        assert_eq!(net.ip.as_str().unwrap(), "2001:db8::");
+        assert_eq!(net.as_str().unwrap(), "2001:db8::/64");
         assert_eq!(net.prefix_len, 64);
     }
 
@@ -229,7 +226,7 @@ mod test_net {
     fn test_default_prefix_for_ip_without_cidr() {
         let net = EbpfNet::to_type("10.0.0.5".to_string()).unwrap();
 
-        assert_eq!(net.as_str(), "10.0.0.5/32");
+        assert_eq!(net.as_str().unwrap(), "10.0.0.5/32");
         
         assert_eq!(net.prefix_len, 128);
     }

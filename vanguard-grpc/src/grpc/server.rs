@@ -13,18 +13,18 @@ use vanguard_core::{
         rules::*,
         stats::*,
         config::*,
-        blacklist::*,
-        whitelist::*,
     },
     common::{
-        common::{Parse, IpProto, EtherType},
-        ip::*
+        commons::{Parse, IpProto, EtherType},
+        ip::*,
+        maps::{
+            blacklist::*,
+            whitelist::*,
+        }
     }
 };
-use vanguard_core::{
-    erret_result::*,
-    brevno::*,
-};
+use vanguard_core::brevno::*;
+use erret_result::*;
 
 struct VanguardService {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -215,7 +215,7 @@ impl Vanguard for VanguardService {
 fn parse_rule_key(key: RuleKey) -> Result<XdpRuleKey, Status> {
     Ok(XdpRuleKey {
         ip: EbpfIp::to_type(key.ip).map_err(|e| Status::invalid_argument(format!("{e}")))?,
-        port: u16::try_from(key.port).map_err(|e| Status::invalid_argument(format!("{e}")))?,
+        port: key.port,
         eth: EtherType::to_type(key.eth).map_err(|e| Status::invalid_argument(format!("{e}")))?,
         proto: IpProto::to_type(key.proto).map_err(|e| Status::invalid_argument(format!("{e}")))?,
     })

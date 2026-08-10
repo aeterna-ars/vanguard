@@ -12,6 +12,7 @@ libsystemd = { workspace = true }
 vanguard-core = { path = "../vanguard-core" }
 vanguard-grpc = { path = "../vanguard-grpc" }
 vanguard-config = { path = "../vanguard-config" }
+erret-result = { workspace = true }
 
 [features]
 default = []

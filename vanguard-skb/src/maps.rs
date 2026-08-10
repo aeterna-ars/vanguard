@@ -3,7 +3,12 @@ use aya_ebpf::{
     maps::{SockMap, SockHash},
 };
 
-use vanguard_core::sk::maps::socks::SockKey;
+use vanguard_core::{
+    common::maps::{
+        blacklist::BlockEvent,
+    },
+    sk::maps::socks::SockKey
+};
 
 #[map]
 pub static SOCK_HASH: SockHash<SockKey> = SockHash::with_max_entries(65536, 0);

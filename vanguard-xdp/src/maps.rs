@@ -1,3 +1,4 @@
+use aya_ebpf::maps::RingBuf;
 pub use aya_ebpf::{
     macros::map,
     maps::{HashMap, LruPerCpuHashMap, Array, PerCpuArray, lpm_trie::*},
@@ -6,60 +7,57 @@ pub use aya_ebpf::{
 pub use vanguard_core::{
     xdp::maps::{
         config::XdpConfig,
-        blacklist::XdpBlockEntry,
-        counter::XdpCounter,
+        counter::*,
         rules::{XdpRuleValue, XdpRuleKey}
     },
-    common::ip::*,
+    common::{
+        ip::*,
+        maps::{
+            blacklist::{BlockEvent, EbpfBlockEntry},
+        }
+    },
 };
 
 #[map]
 pub static CONFIG: Array<XdpConfig> = Array::<XdpConfig>::with_max_entries(1, 0);
 
 #[map]
-pub static BLACKLIST: LpmTrie<EbpfIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0);
+pub static BLOCK_EVENT: RingBuf = RingBuf::with_byte_size(256 * 1024, 0);
+
+#[map]
+pub static BLACKLIST: LpmTrie<EbpfIp, EbpfBlockEntry> = LpmTrie::with_max_entries(65536, 0);
 #[inline(always)]
-pub fn block_ip(addr: &EbpfNet, now: u64, config: &XdpConfig) {
-    let entry = XdpBlockEntry {
-        blocked_until: config.block_time + now,
-    };
-
+pub fn is_blocked(ip: &EbpfIp, now: u64) -> bool {
     let key: Key<EbpfIp> = Key {
-        prefix_len: addr.prefix_len,
-        data: addr.ip,
+        prefix_len: 32,
+        data: *ip,
     };
 
-    let _ = BLACKLIST.insert(key, &entry, 0);
-}
-#[inline(always)]
-pub fn is_blocked(ip: &EbpfNet, now: u64) -> bool {
-    let key: Key<EbpfIp> = Key {
-        prefix_len: ip.prefix_len,
-        data: ip.ip,
-    };
-
-    match BLACKLIST.get(&key) {
+    match unsafe { BLACKLIST.get(&key) } {
         Some(entry) => {
-            if now < (*entry).blocked_until {
-                true
-            } else {
-                let _ = BLACKLIST.remove(key);
-                false
-            }
+            now < (*entry).blocked_until
         }
         None => false,
     }
 }
 
 #[map]
-pub static WHITELIST: LpmTrie<EbpfIp, XdpBlockEntry> = LpmTrie::with_max_entries(65536, 0); // u8 is nothing
+pub static WHITELIST: LpmTrie<EbpfIp, u8> = LpmTrie::with_max_entries(65536, 0); // u8 is nothing
+#[inline(always)]
+pub fn is_white(ip: &EbpfIp) -> bool {
+    let key: Key<EbpfIp> = Key {
+        prefix_len: 32,
+        data: *ip,
+    };
+
+    WHITELIST.get(&key).is_some()
+}
 
 #[map]
-pub static RULES: HashMap<XdpRuleKey, XdpRuleValue> = HashMap::with_max_entries(65536, 0);
+pub static RULES: HashMap<XdpRuleKey, XdpRuleValue> = HashMap::with_max_entries(1024, 0);
 
 #[map]
 pub static PACKET_COUNTER: LruPerCpuHashMap<EbpfIp, XdpCounter> = LruPerCpuHashMap::with_max_entries(65536, 0);
-pub const RESET_INTERVAL: u64 = 1_000_000_000;
 #[inline(always)]
 pub fn check_limit(ip: &EbpfIp, now: u64, config: &XdpConfig) -> bool {
     unsafe {

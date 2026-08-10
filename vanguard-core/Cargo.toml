@@ -5,16 +5,17 @@ edition.workspace = true
 
 [dependencies]
 aya = { workspace = true, optional = true }
+aya-ebpf = { workspace = true, optional = true }
 network-types = { workspace = true }
 erret-macro = { workspace = true, optional = true }
-erret-result = { workspace = true, optional = true }
 brevno = { workspace = true, optional = true }
+libc = { workspace = true, optional = true }
 
 [features]
 default = ["userspace"]
 userspace = [
     "dep:aya",
     "dep:brevno",
-    "dep:erret-result",
     "dep:erret-macro",
+    "dep:libc",
 ]

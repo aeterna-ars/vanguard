@@ -14,7 +14,7 @@ use vanguard_core::{
     common::{
         consts::*,
         ip::EbpfIp,
-        common::IpProto
+        commons::IpProto
     },
     sk::maps::socks::SockKey,
 };

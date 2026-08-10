@@ -10,19 +10,33 @@ use network_types::{
     udp::UdpHdr,
 };
 
-use crate::inline::ptr_at;
 use crate::maps::*;
 
+use core::mem;
+
 #[inline(always)]
-pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(EbpfIp, u32), u32> {
-    let ethhdr: *const EthHdr = match ptr_at(&ctx, offset) {
+pub fn ptr_at<T>(ctx: &XdpContext, offset: usize) -> Result<*const T, ()> {
+    let (start, end) = (ctx.data(), ctx.data_end());
+    let len = mem::size_of::<T>();
+
+    if start + offset + len > end {
+        return Err(());
+    }
+
+    let ptr = (start + offset) as *const T;
+    Ok(unsafe { &*ptr })
+}
+
+#[inline(always)]
+pub fn try_parse_ip(ctx: &XdpContext, offset: usize) -> Result<(EbpfIp, u32), u32> {
+    let ethhdr: *const EthHdr = match ptr_at(ctx, offset) {
         Ok(hdr) => hdr,
         Err(_) => return Err(xdp_action::XDP_PASS),
     };
 
     match unsafe { (*ethhdr).ether_type() } {
         Ok(EtherType::Ipv4) => {
-            let iphdr: *const Ipv4Hdr = match ptr_at(&ctx, EthHdr::LEN) {
+            let iphdr: *const Ipv4Hdr = match ptr_at(ctx, EthHdr::LEN) {
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_DROP),
             };
@@ -35,7 +49,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(EbpfIp, u32), u
                 }
             };
 
-            let port = try_filter_port(&ctx, ip_len, proto)?;
+            let port = try_parse_port(ctx, ip_len, proto)?;
 
             let key = XdpRuleKey {
                 ip: src,
@@ -44,18 +58,18 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(EbpfIp, u32), u
                 proto,
             };
 
-            if let Some(act) = unsafe { RULES.get(&key) } {
+            if let Some(act) = unsafe { RULES.get(key) } {
                 return Ok((src, act.action as u32));
             }
 
-            Ok((src, xdp_action::XDP_PASS))
+            return Ok((src, xdp_action::XDP_PASS))
         },
         Ok(EtherType::Ipv6) => {
-            let iphdr: *const Ipv6Hdr = match ptr_at(&ctx, EthHdr::LEN) {
+            let iphdr: *const Ipv6Hdr = match ptr_at(ctx, EthHdr::LEN) {
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_PASS),
             };
-            let src = EbpfIp::from_v6(unsafe { (*iphdr).src_addr });
+            let src = EbpfIp::from_v6(unsafe { core::mem::transmute::<[u8; 16], [u32; 4]>((*iphdr).src_addr) });
             let ip_len = Ipv6Hdr::LEN;
             let proto = match unsafe { (*iphdr).next_hdr() } {
                 Ok(p) => p,
@@ -64,7 +78,7 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(EbpfIp, u32), u
                 }
             };
 
-            let port = try_filter_port(&ctx, ip_len, proto)?;
+            let port = try_parse_port(ctx, ip_len, proto)?;
 
             let key = XdpRuleKey {
                 ip: src,
@@ -73,41 +87,47 @@ pub fn try_filter_ip(ctx: &XdpContext, offset: usize) -> Result<(EbpfIp, u32), u
                 proto,
             };
 
-            if let Some(act) = unsafe { RULES.get(&key) } {
+            if let Some(act) = unsafe { RULES.get(key) } {
                 return Ok((src, act.action as u32));
             }
 
-            Ok((src, xdp_action::XDP_PASS))
+            return Ok((src, xdp_action::XDP_PASS))
         },
         _ => {
             return Err(xdp_action::XDP_PASS)
         }
     }
+
+    Err(xdp_action::XDP_PASS)
 }
 
 #[inline(always)]
-fn try_filter_port(ctx: &XdpContext, offset: usize, protocol: IpProto) -> Result<u16, u32> {
+fn try_parse_port(ctx: &XdpContext, offset: usize, protocol: IpProto) -> Result<u32, u32> {
     match protocol {
         IpProto::Tcp => {
             let tcphdr: *const TcpHdr = match ptr_at(ctx, TCP_HDR_LEN + offset) {
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_PASS),
             };
-            let port = u16::from_be_bytes(unsafe { (*tcphdr).source });
+            let port: [u8; 2] = unsafe { (*tcphdr).source };
+            let alligned_port = u32::from_be_bytes([0, 0, port[0], port[1]]);
 
-            return Ok(port)
+            return Ok(alligned_port)
         },
         IpProto::Udp => {
             let udphdr: *const UdpHdr = match ptr_at(ctx, UdpHdr::LEN + offset) {
                 Ok(hdr) => hdr,
                 Err(_) => return Err(xdp_action::XDP_PASS),
             };
-            let port = u16::from_be_bytes(unsafe { (*udphdr).src });
+            let port = unsafe { (*udphdr).src };
+            let alligned_port = u32::from_be_bytes([0, 0, port[0], port[1]]);
 
-            return Ok(port)
+            return Ok(alligned_port)
         },
         _ => {
             return Err(xdp_action::XDP_PASS);
         }
     }
+
+    Err(xdp_action::XDP_PASS)
 }

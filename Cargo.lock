@@ -518,12 +518,12 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 [[package]]
 name = "erret-macro"
 version = "0.1.0"
-source = "git+https://github.com/aeterna-ars/erret#e2ac8da491af0beda7f31837d2f285e6ed1a5250"
+source = "git+https://github.com/aeterna-ars/erret#c9d23c8fad749f3467e499dfce48dba43c8d01ae"
 
 [[package]]
 name = "erret-result"
 version = "0.1.0"
-source = "git+https://github.com/aeterna-ars/erret#e2ac8da491af0beda7f31837d2f285e6ed1a5250"
+source = "git+https://github.com/aeterna-ars/erret#c9d23c8fad749f3467e499dfce48dba43c8d01ae"
 
 [[package]]
 name = "errno"
@@ -847,9 +847,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.186"
+version = "0.2.189"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
 name = "libsystemd"
@@ -1715,6 +1715,7 @@ version = "0.1.0"
 dependencies = [
  "aya",
  "clap",
+ "erret-result",
  "tokio",
  "vanguard-core",
  "vanguard-grpc",
@@ -1724,6 +1725,7 @@ dependencies = [
 name = "vanguard-config"
 version = "0.1.0"
 dependencies = [
+ "erret-result",
  "serde",
  "serde_yaml",
  "vanguard-core",
@@ -1734,9 +1736,10 @@ name = "vanguard-core"
 version = "0.1.0"
 dependencies = [
  "aya",
+ "aya-ebpf",
  "brevno",
  "erret-macro",
- "erret-result",
+ "libc",
  "network-types",
 ]
 
@@ -1747,6 +1750,7 @@ dependencies = [
  "aya",
  "aya-log",
  "env_logger",
+ "erret-result",
  "libsystemd",
  "tokio",
  "vanguard-config",
@@ -1759,6 +1763,7 @@ name = "vanguard-grpc"
 version = "0.1.0"
 dependencies = [
  "aya",
+ "erret-result",
  "prost",
  "tokio",
  "tonic",

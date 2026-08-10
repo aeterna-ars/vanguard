@@ -4,16 +4,17 @@ use clap::{
     Args
 };
 use vanguard_core::{
-    erret_result::*,
     xdp::maps::{
         rules::*,
     },
     common::{
-        common::*,
+        commons::*,
         ip::*
     }
 };
 use vanguard_grpc::client::VanguardGrpcClient;
+
+use erret_result::*;
 
 #[derive(Parser)]
 #[command(name = "vanguard")]
@@ -205,7 +206,7 @@ impl TryFrom<XdpRuleKeyWrapper> for XdpRuleKey {
     fn try_from(w: XdpRuleKeyWrapper) -> Result<Self, Self::Error> {
         Ok(XdpRuleKey {
             ip: EbpfIp::to_type(w.ip)?,
-            port: w.port,
+            port: w.port as u32,
             eth: EtherType::to_type(w.eth)?,
             proto: IpProto::to_type(w.proto)?,
         })

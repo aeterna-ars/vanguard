@@ -17,14 +17,18 @@ use aya_log::EbpfLogger;
 
 use libsystemd::daemon::{self, *};
 
-use vanguard_core::xdp::{
+use vanguard_core::{
+    common::maps::{
+        blacklist::*,
+        whitelist::*,
+    },
+    error::*,
+    xdp::maps,
     brevno::*,
-    erret_result::*,
-    error::VanguardError,
-    maps,
 };
 use vanguard_grpc::server::*;
-use vanguard_config::config::*;
+use vanguard_config::*;
+use erret_result::*;
 
 struct XdpDaemon {
     pub bpf: Arc<Mutex<Ebpf>>,
@@ -41,7 +45,7 @@ impl XdpDaemon {
         Self::notify();
 
         let mut bpf = EbpfLoader::new()
-            .verifier_log_level(VerifierLogLevel::all()) 
+            .verifier_log_level(VerifierLogLevel::all())
             .default_map_pin_directory("/sys/fs/bpf/vanguard")
             .load(aya::include_bytes_aligned!("../../target/bpfel-unknown-none/release/vanguard-xdp"))?;
 
@@ -49,7 +53,7 @@ impl XdpDaemon {
         program.load()?;
 
         let link_id = program.attach(iface, XdpMode::default())
-            .map_err(|_| VanguardError::Ebpf("failed to attach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
+            .map_err(|_| VanguardError::IoError("failed to attach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
 
         let mut daemon = XdpDaemon {
             bpf: Arc::new(Mutex::new(bpf)),
@@ -102,11 +106,11 @@ impl XdpDaemon {
         maps::config::ConfigMap::write(&mut bpf, config.config)?;
 
         for block in config.blacklist {
-            maps::blacklist::BlocklistMap::block(&mut bpf, block.ip, block.blocked_until)?;
+            BlocklistMap::block(&mut bpf, block.ip, block.blocked_until)?;
         }
 
         for ip in config.whitelist {
-            maps::whitelist::WhitelistMap::insert(&mut bpf, ip)?;
+            WhitelistMap::insert(&mut bpf, ip)?;
         }
 
         for rule in config.rules {
@@ -187,7 +191,7 @@ impl XdpDaemon {
         let program: &mut Xdp = bpf.program_mut("core").unwrap().try_into()?;
 
         program.detach(self.link_id)
-            .map_err(|_| VanguardError::Ebpf("failed to detach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
+            .map_err(|_| VanguardError::IoError("failed to detach the XDP program with default mode - try changing XdpMode::default() to XdpMode::Skb"))?;
 
         program.unload()?;
 

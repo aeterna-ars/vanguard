@@ -1,11 +1,8 @@
 #[cfg(feature = "userspace")]
-use crate::common::common::*;
+use crate::common::commons::*;
 
 #[cfg(feature = "userspace")]
-use erret_result::ErrResult;
-
-#[cfg(feature = "userspace")]
-use crate::xdp::error::VanguardError;
+use crate::error::VanguardError;
 
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]
@@ -24,15 +21,16 @@ pub struct GlobalStatsMap;
 
 #[cfg(feature = "userspace")]
 impl GlobalStatsMap {
-    fn get(bpf: &mut Ebpf) -> ErrResult<PerCpuArray<MapData, XdpGlobalStats>> {
+    fn get(bpf: &mut Ebpf) -> Result<PerCpuArray<MapData, XdpGlobalStats>, VanguardError> {
         get_map!(bpf, "STATS", PerCpuArray, PerCpuArray<MapData, XdpGlobalStats>)
     }
 
-    pub fn get_total(bpf: &mut Ebpf) -> ErrResult<XdpGlobalStats> {
+    pub fn get_total(bpf: &mut Ebpf) -> Result<XdpGlobalStats, VanguardError> {
         let stats_map = Self::get(bpf)
-            .map_err(|e| VanguardError::EbpfMap(format!("Failed to get STATS map: {:?}", e)))?;
+            .map_err(|e| VanguardError::EbpfMapError(format!("{e}")))?;
         
-        let per_cpu_values = stats_map.get(&0, 0)?; 
+        let per_cpu_values = stats_map.get(&0, 0)
+            .map_err(|e| VanguardError::EbpfMapError(format!("{e}")))?;
 
         let mut total_stats = XdpGlobalStats {
             total: 0,

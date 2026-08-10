@@ -9,6 +9,7 @@ vanguard-grpc = { path = "../vanguard-grpc" }
 aya = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 tokio = { workspace = true }
+erret-result = { workspace = true }
 
 [features]
 default = []

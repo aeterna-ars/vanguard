@@ -12,9 +12,10 @@ use vanguard_core::{
         rules::*,
         stats::*,
     },
-    common::common::Parse,
+    common::commons::Parse,
 };
-use vanguard_core::erret_result::*;
+
+use erret_result::*;
 
 pub struct VanguardGrpcClient {
     pub inner: VanguardClient<Channel>,
@@ -59,15 +60,15 @@ impl VanguardGrpcClient {
 
     pub async fn add_rule(&mut self, key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
         let k = RuleKey {
-            ip: key.ip.as_str(),
+            ip: key.ip.as_str()?,
             port: key.port as u32,
-            eth: key.eth.as_str(),
-            proto: key.proto.as_str(),
+            eth: key.eth.as_str()?,
+            proto: key.proto.as_str()?,
         };
 
         let v = RuleValue {
-            action: value.action.as_str(),
-            redirect: Some(parse_rule_key(value.redirect)),
+            action: value.action.as_str()?,
+            redirect: Some(parse_rule_key(value.redirect)?),
         };
 
         let request = tonic::Request::new(AddRuleRequest {
@@ -81,7 +82,7 @@ impl VanguardGrpcClient {
 
     pub async fn del_rule(&mut self, rule_key: XdpRuleKey) -> ErrResult<()> {
         let rule = parse_rule_key(rule_key);
-        let request = tonic::Request::new(DelRuleRequest { key: Some(rule) });
+        let request = tonic::Request::new(DelRuleRequest { key: Some(rule?) });
         self.inner.del_rule(request).await?;
         Ok(())
     }
@@ -102,11 +103,11 @@ impl VanguardGrpcClient {
     }
 }
 
-fn parse_rule_key(key: XdpRuleKey) -> RuleKey {
-    super::vanguard_api::RuleKey {
-        ip: key.ip.as_str(),
+fn parse_rule_key(key: XdpRuleKey) -> ErrResult<RuleKey> {
+    Ok(super::vanguard_api::RuleKey {
+        ip: key.ip.as_str()?,
         port: key.port as u32,
-        eth: key.eth.as_str(),
-        proto: key.proto.as_str(),
-    }
+        eth: key.eth.as_str()?,
+        proto: key.proto.as_str()?,
+    })
 }
