@@ -90,7 +90,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        BlocklistMap::block(&mut bpf, ip, req.block_until)
+        BlocklistMap::block(&mut bpf, ip)
             .map_err(|e| Status::internal(format!("address block error: {e}")))?;
 
         Ok(Response::new(()))
@@ -197,7 +197,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
         
-        let stats = GlobalStatsMap::get_total(&mut bpf)
+        let stats = XdpGlobalStatsMap::get_total(&mut bpf)
             .map_err(|_| Status::internal("ebpf map error"))?;
 
         let response = GetStatsResponse {
@@ -215,7 +215,7 @@ impl Vanguard for VanguardService {
 fn parse_rule_key(key: RuleKey) -> Result<XdpRuleKey, Status> {
     Ok(XdpRuleKey {
         ip: EbpfIp::to_type(key.ip).map_err(|e| Status::invalid_argument(format!("{e}")))?,
-        port: key.port,
+        port: EbpfPort(key.port as u16),
         eth: EtherType::to_type(key.eth).map_err(|e| Status::invalid_argument(format!("{e}")))?,
         proto: IpProto::to_type(key.proto).map_err(|e| Status::invalid_argument(format!("{e}")))?,
     })

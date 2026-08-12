@@ -10,7 +10,6 @@ use aya_ebpf::{
     macros::xdp,
     programs::xdp::XdpContext,
 };
-use aya_log_ebpf::info;
 
 use crate::maps::*;
 
@@ -18,12 +17,10 @@ use crate::maps::*;
 pub fn main(ctx: XdpContext) -> u32 {
     match try_filter(ctx) {
         Ok(ret) => {
-            info!(ctx, "passed");
             update_stats(ret);
             ret
         }
         Err(_) => {
-            info!(ctx, "dropped");
             update_stats(1);
             xdp_action::XDP_DROP
         },

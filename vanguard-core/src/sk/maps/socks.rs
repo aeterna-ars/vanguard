@@ -1,6 +1,5 @@
-use std::os::fd::AsRawFd;
-
-use crate::{common::{commons::*, ip::*}, error::VanguardError};
+#[cfg(feature = "userspace")]
+use super::*;
 
 #[derive(Copy, Clone)]
 #[repr(C)]

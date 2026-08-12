@@ -1,4 +1,7 @@
 #[cfg(feature = "userspace")]
+use crate::get_map;
+
+#[cfg(feature = "userspace")]
 use crate::{common::{commons::*, ip::*}, error::VanguardError};
 
 #[cfg(feature = "userspace")]

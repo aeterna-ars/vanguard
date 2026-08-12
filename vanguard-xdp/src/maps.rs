@@ -13,7 +13,7 @@ pub use vanguard_core::{
     common::{
         ip::*,
         maps::{
-            blacklist::{BlockEvent, EbpfBlockEntry},
+            blacklist::BlockEvent,
         }
     },
 };
@@ -25,7 +25,7 @@ pub static CONFIG: Array<XdpConfig> = Array::<XdpConfig>::with_max_entries(1, 0)
 pub static BLOCK_EVENT: RingBuf = RingBuf::with_byte_size(256 * 1024, 0);
 
 #[map]
-pub static BLACKLIST: LpmTrie<EbpfIp, EbpfBlockEntry> = LpmTrie::with_max_entries(65536, 0);
+pub static BLACKLIST: LpmTrie<EbpfIp, u8> = LpmTrie::with_max_entries(65536, 0);
 #[inline(always)]
 pub fn is_blocked(ip: &EbpfIp, now: u64) -> bool {
     let key: Key<EbpfIp> = Key {
@@ -57,32 +57,38 @@ pub fn is_white(ip: &EbpfIp) -> bool {
 pub static RULES: HashMap<XdpRuleKey, XdpRuleValue> = HashMap::with_max_entries(1024, 0);
 
 #[map]
-pub static PACKET_COUNTER: LruPerCpuHashMap<EbpfIp, XdpCounter> = LruPerCpuHashMap::with_max_entries(65536, 0);
+pub static PACKET_COUNTER: LruPerCpuHashMap<EbpfIp, XdpPacketCounter> = LruPerCpuHashMap::with_max_entries(65536, 0);
 #[inline(always)]
-pub fn check_limit(ip: &EbpfIp, now: u64, config: &XdpConfig) -> bool {
+pub fn check_limit(ip: &EbpfIp, now_ns: u64, config: &XdpConfig) -> bool {
     unsafe {
         if let Some(ptr) = PACKET_COUNTER.get_ptr_mut(ip) {
-            let counter = &mut *ptr;
+            let cnt = &mut *ptr;
 
-            if now - counter.last_reset > RESET_INTERVAL {
-                counter.count = 0;
-                counter.last_reset = now;
+            if now_ns > cnt.last_update {
+                let elapsed_ns = now_ns - cnt.last_update;
+                let generated_tokens = elapsed_ns / config.token_interval_ns;
+                if generated_tokens > 0 {
+                    cnt.tokens = core::cmp::min(config.max_tokens, cnt.tokens + generated_tokens);
+                    cnt.last_update += generated_tokens * config.token_interval_ns;
+                }
+            } else {
+                cnt.last_update = now_ns;
             }
 
-            if counter.count >= config.rate_limit {
-                return false;
+            if cnt.tokens >= 1 {
+                cnt.tokens -= 1;
+                return true;
             }
 
-            counter.count += 1;
+            false
         } else {
-            let new_counter = XdpCounter {
-                count: 1,
-                last_reset: now,
+            let new_state = XdpPacketCounter {
+                tokens: config.max_tokens.saturating_sub(1),
+                last_update: now_ns,
             };
-            let _ = PACKET_COUNTER.insert(ip, &new_counter, 0);
+            let _ = PACKET_COUNTER.insert(ip, &new_state, 0);
+            true
         }
-
-        true
     }
 }
 

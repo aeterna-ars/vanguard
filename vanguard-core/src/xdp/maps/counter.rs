@@ -1,7 +1,6 @@
 #[repr(C)]
-pub struct XdpCounter {
-    pub last_reset: u64,
-    pub count: u32,
+#[derive(Clone, Copy)]
+pub struct XdpPacketCounter {
+    pub tokens: u64,
+    pub last_update: u64,
 }
-
-pub const RESET_INTERVAL: u64 = 1_000_000_000;

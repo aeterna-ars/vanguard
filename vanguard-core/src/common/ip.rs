@@ -9,6 +9,10 @@ use std::str::FromStr;
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
+pub struct EbpfPort(pub u16);
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct EbpfNet {
     pub ip: EbpfIp,
     pub prefix_len: u32,

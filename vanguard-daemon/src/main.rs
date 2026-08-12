@@ -1,7 +1,8 @@
+mod control;
+
 use std::sync::Arc;
 
-use tokio::sync::Mutex;
-use tokio::signal::unix::*;
+use tokio::{sync::Mutex, signal::unix::*};
 
 use aya::{
     Ebpf,
@@ -31,8 +32,8 @@ use vanguard_config::*;
 use erret_result::*;
 
 struct XdpDaemon {
-    pub bpf: Arc<Mutex<Ebpf>>,
-    pub link_id: XdpLinkId,
+    bpf: Arc<Mutex<Ebpf>>,
+    link_id: XdpLinkId,
 }
 
 impl XdpDaemon {

@@ -1,8 +1,5 @@
 #[cfg(feature = "userspace")]
-use crate::common::commons::*;
-
-#[cfg(feature = "userspace")]
-use crate::error::VanguardError;
+use super::*;
 
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]
@@ -17,12 +14,12 @@ pub struct XdpGlobalStats {
 unsafe impl Pod for XdpGlobalStats {}
 
 #[cfg(feature = "userspace")]
-pub struct GlobalStatsMap;
+pub struct XdpGlobalStatsMap;
 
 #[cfg(feature = "userspace")]
-impl GlobalStatsMap {
+impl XdpGlobalStatsMap {
     fn get(bpf: &mut Ebpf) -> Result<PerCpuArray<MapData, XdpGlobalStats>, VanguardError> {
-        get_map!(bpf, "STATS", PerCpuArray, PerCpuArray<MapData, XdpGlobalStats>)
+        get_map!(bpf, "XDP_STATS", PerCpuArray, PerCpuArray<MapData, XdpGlobalStats>)
     }
 
     pub fn get_total(bpf: &mut Ebpf) -> Result<XdpGlobalStats, VanguardError> {

@@ -1,19 +1,11 @@
 #[cfg(feature = "userspace")]
-use crate::common::{commons::*, ip::*};
-
-use network_types::{
-    eth::EtherType,
-    ip::IpProto,
-};
-
-#[cfg(feature = "userspace")]
-use crate::error::VanguardError;
+use super::*;
 
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpRuleKey {
     pub ip: EbpfIp,
-    pub port: u32,
+    pub port: EbpfPort,
     pub eth: EtherType,
     pub proto: IpProto,
 }

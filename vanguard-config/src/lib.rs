@@ -134,7 +134,7 @@ mod serialize {
         fn try_from(w: XdpRuleKeyWrapper) -> Result<Self, Self::Error> {
             Ok(XdpRuleKey {
                 ip: EbpfIp::to_type(w.ip)?,
-                port: w.port as u32,
+                port: EbpfPort(w.port),
                 eth: EtherType::to_type(w.eth)?,
                 proto: IpProto::to_type(w.proto)?,
             })

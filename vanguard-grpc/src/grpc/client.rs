@@ -61,7 +61,7 @@ impl VanguardGrpcClient {
     pub async fn add_rule(&mut self, key: XdpRuleKey, value: XdpRuleValue) -> ErrResult<()> {
         let k = RuleKey {
             ip: key.ip.as_str()?,
-            port: key.port as u32,
+            port: key.port.0 as u32,
             eth: key.eth.as_str()?,
             proto: key.proto.as_str()?,
         };
@@ -106,7 +106,7 @@ impl VanguardGrpcClient {
 fn parse_rule_key(key: XdpRuleKey) -> ErrResult<RuleKey> {
     Ok(super::vanguard_api::RuleKey {
         ip: key.ip.as_str()?,
-        port: key.port as u32,
+        port: key.port.0 as u32,
         eth: key.eth.as_str()?,
         proto: key.proto.as_str()?,
     })
