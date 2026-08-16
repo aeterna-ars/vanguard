@@ -13,7 +13,6 @@ use vanguard_core::{
         maps::blacklist::BlocklistMap,
     },
     brevno::*,
-    get_map,
 };
 
 use tokio::{
@@ -21,7 +20,13 @@ use tokio::{
     time::{Duration, sleep},
 };
 
-use aya::maps::{MapData, lpm_trie::*};
+use aya::{
+    Ebpf,
+    maps::{
+        MapData,
+        lpm_trie::*
+    }
+};
 
 const BASE_BLOCK_SECS: u64 = 60;
 const MAX_BLOCK_SECS: u64 = 86400 * 7;
@@ -34,25 +39,23 @@ struct IpReputation {
 }
 
 pub struct BlackManager {
-    bpf: Arc<Mutex<aya::Ebpf>>,
-    blacklist: aya::maps::LpmTrie<aya::maps::MapData, EbpfIp, u8>,
-    reputation_db: Arc<Mutex<HashMap<EbpfIp, IpReputation>>>,
+    bpf: Arc<Ebpf>,
+    blacklist: Arc<LpmTrie<MapData, EbpfIp, u8>>,
+    reputation_db: Arc<HashMap<EbpfIp, IpReputation>>,
 }
 
 impl BlackManager {
     pub async fn new(
-        bpf: Arc<Mutex<aya::Ebpf>>,
+        bpf: Arc<aya::Ebpf>,
     ) -> ErrResult<Self> {
         let reputation_db = Arc::new(Mutex::new(HashMap::new()));
+
+        let blacklist = BlocklistMap::get(&mut bpf)?;
         
         let db_clone = Arc::clone(&reputation_db);
         Self::cooldown(db_clone);
 
-        let mut bpf_lock = bpf.lock().await;
-        let blacklist = get_map!(&mut *bpf_lock, "BLACKLIST", LpmTrie, LpmTrie<MapData, EbpfIp, u8>)?;
-        drop(bpf_lock);
-
-        Ok(Self { bpf, blacklist, reputation_db })
+        Ok(Self { bpf, blacklist: Arc::new(blacklist), reputation_db })
     }
 
     async fn block_ip(&mut self, ip: EbpfIp) -> ErrResult<()> {
@@ -75,9 +78,7 @@ impl BlackManager {
                 prefix_len: 32,
             };
 
-            let mut bpf_lock = self.bpf.lock().await;
-            BlocklistMap::block(&mut bpf_lock, net)?;
-            drop(bpf_lock);
+            BlocklistMap::block(&mut self.bpf, net)?;
 
             self.blacklist.insert(&key, 1, 0)?;
             info!(
@@ -95,10 +96,8 @@ impl BlackManager {
     }
 
     async fn unblock_timer(
-        bpf: Arc<Mutex<aya::Ebpf>>,
+        &mut self,
         block_secs: u64,
-        blacklist: aya::maps::HashMap<aya::maps::MapData, EbpfIp, u8>,
-        reputation_db: Arc<Mutex<HashMap<EbpfIp, IpReputation>>>,
         ip: EbpfIp,
     ) -> ErrResult<()> {
         tokio::spawn(async move {
@@ -109,17 +108,13 @@ impl BlackManager {
                 prefix_len: 32,
             };
 
-            let mut bpf_lock = bpf.lock().await;
-            if let Ok(_) = BlocklistMap::unblock(&mut bpf_lock, net) {
+            if let Ok(_) = BlocklistMap::unblock(&mut self.bpf, net) {
                 info!("IP {:?} unblocked", ip.as_str());
             }
-            drop(bpf_lock);
 
-            let mut db = reputation_db.lock().await;
             if let Some(rep) = db.get_mut(&ip) {
                 rep.is_banned = false;
             }
-            drop(db);
         });
 
         Ok(())

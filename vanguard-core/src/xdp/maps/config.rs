@@ -4,18 +4,38 @@ use super::*;
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]
 pub struct XdpConfig {
-    pub block_time: u64,
     pub rate_limit: u32,
+    pub burst_limit: u32,
+    pub interval: u64,
+    pub max_tokens: u64,
 }
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpConfig {}
+#[cfg(feature = "userspace")]
+impl XdpConfig {
+    pub fn new(rate_limit: u32, burst_limit: u32) -> Self {
+        let interval = if rate_limit > 0 {
+            1_000_000_000u64 / (rate_limit as u64)
+        } else {
+            u64::MAX 
+        };
+
+        Self {
+            rate_limit,
+            burst_limit,
+
+            interval,
+            max_tokens: burst_limit as u64,
+        }
+    }
+}
 
 #[cfg(feature = "userspace")]
-pub struct ConfigMap;
+pub struct XdpConfigMap;
 
 #[cfg(feature = "userspace")]
-impl ConfigMap {
-    fn get(bpf: &mut Ebpf) -> Result<Array<MapData, XdpConfig>, VanguardError> {
+impl XdpConfigMap {
+    pub fn get(bpf: &mut Ebpf) -> Result<Array<MapData, XdpConfig>, VanguardError> {
         get_map!(bpf, "CONFIG", Array, Array<MapData, XdpConfig>)
     }
 

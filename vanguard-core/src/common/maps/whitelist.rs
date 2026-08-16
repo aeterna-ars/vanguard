@@ -9,11 +9,11 @@ pub struct WhitelistMap;
 
 #[cfg(feature = "userspace")]
 impl WhitelistMap {
-    fn get(bpf: &mut Ebpf) -> Result<LpmTrie<MapData, EbpfIp, u8>, VanguardError> {
+    pub fn get(bpf: &mut Ebpf) -> Result<LpmTrie<MapData, EbpfIp, u8>, VanguardError> {
         get_map!(bpf, "WHITELIST", LpmTrie, LpmTrie<MapData, EbpfIp, u8>)
     }
 
-    fn is_white(map: &LpmTrie<MapData, EbpfIp, u8>, ip: EbpfNet) -> bool {
+    pub fn is_white(map: &LpmTrie<MapData, EbpfIp, u8>, ip: EbpfNet) -> bool {
         let key: Key<EbpfIp> = Key::new(ip.prefix_len, ip.ip);
         map.get(&key, 0).is_ok()
     }

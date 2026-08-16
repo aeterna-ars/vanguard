@@ -12,11 +12,11 @@ pub struct SkConfig {
 unsafe impl Pod for SkConfig {}
 
 #[cfg(feature = "userspace")]
-pub struct ConfigMap;
+pub struct SkConfigMap;
 
 #[cfg(feature = "userspace")]
-impl ConfigMap {
-    fn get(bpf: &mut Ebpf) -> Result<Array<MapData, SkConfig>, VanguardError> {
+impl SkConfigMap {
+    pub fn get(bpf: &mut Ebpf) -> Result<Array<MapData, SkConfig>, VanguardError> {
         get_map!(bpf, "CONFIG", Array, Array<MapData, SkConfig>)
     }
 

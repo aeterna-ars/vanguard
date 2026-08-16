@@ -107,7 +107,7 @@ impl XdpDaemon {
         maps::config::ConfigMap::write(&mut bpf, config.config)?;
 
         for block in config.blacklist {
-            BlocklistMap::block(&mut bpf, block.ip, block.blocked_until)?;
+            BlocklistMap::block(&mut bpf, block.ip)?;
         }
 
         for ip in config.whitelist {

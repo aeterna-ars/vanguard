@@ -18,7 +18,7 @@ pub struct SkGlobalStatsMap;
 
 #[cfg(feature = "userspace")]
 impl SkGlobalStatsMap {
-    fn get(bpf: &mut Ebpf) -> Result<PerCpuArray<MapData, SkGlobalStats>, VanguardError> {
+    pub fn get(bpf: &mut Ebpf) -> Result<PerCpuArray<MapData, SkGlobalStats>, VanguardError> {
         get_map!(bpf, "SK_STATS", PerCpuArray, PerCpuArray<MapData, SkGlobalStats>)
     }
 

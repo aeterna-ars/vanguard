@@ -4,9 +4,6 @@ use aya_ebpf::{
 };
 
 use vanguard_core::{
-    common::maps::{
-        blacklist::BlockEvent,
-    },
     sk::maps::socks::SockKey
 };
 

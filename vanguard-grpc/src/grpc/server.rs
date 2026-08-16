@@ -41,15 +41,15 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        let cfg = ConfigMap::read(&mut bpf)
+        let cfg = XdpConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
 
         let new = XdpConfig {
             rate_limit: req.limit,
-            block_time: cfg.block_time
+            burst_limit: cfg.block_time
         };
 
-        ConfigMap::write(&mut bpf, new)
+        XdpConfigMap::write(&mut bpf, new)
             .map_err(|e| Status::internal(format!("write map error: {e}")))?;
 
         Ok(Response::new(()))
@@ -64,7 +64,7 @@ impl Vanguard for VanguardService {
 
         let mut bpf = self.bpf.lock().await;
 
-        let cfg = ConfigMap::read(&mut bpf)
+        let cfg = XdpConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
 
         let new = XdpConfig {
@@ -72,7 +72,7 @@ impl Vanguard for VanguardService {
             block_time: req.time,
         };
 
-        ConfigMap::write(&mut bpf, new)
+        XdpConfigMap::write(&mut bpf, new)
             .map_err(|e| Status::internal(format!("write map error: {e}")))?;
 
         Ok(Response::new(()))

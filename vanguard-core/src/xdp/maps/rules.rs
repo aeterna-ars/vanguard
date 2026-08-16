@@ -60,7 +60,7 @@ pub struct RulesMap;
 
 #[cfg(feature = "userspace")]
 impl RulesMap {
-    fn get(bpf: &mut Ebpf) -> Result<HashMap<MapData, XdpRuleKey, XdpRuleValue>, VanguardError> {
+    pub fn get(bpf: &mut Ebpf) -> Result<HashMap<MapData, XdpRuleKey, XdpRuleValue>, VanguardError> {
         get_map!(bpf, "RULES", HashMap, HashMap<MapData, XdpRuleKey, XdpRuleValue>)
     }
 

@@ -13,20 +13,25 @@ pub use aya::{
 use crate::error::VanguardError;
 
 #[cfg(feature = "userspace")]
-#[macro_export]
-macro_rules! get_map {
-    ($bpf:expr, $name:expr, $variant:ident, $type:ty) => {{
-        let map = $bpf.take_map($name)
-            .ok_or_else(|| $crate::error::VanguardError::EbpfMapError("map take error".to_string()))?;
-        
-        match map {
-            aya::maps::Map::$variant(data) => {
-                let map_obj = aya::maps::Map::$variant(data);
-                Ok(<$type>::try_from(map_obj).map_err(|e| $crate::error::VanguardError::EbpfMapError(format!("take map error: {e}")))?)
+mod get_map {
+    #[macro_export]
+    macro_rules! get_map {
+        ($bpf:expr, $name:expr, $variant:ident, $type:ty) => {{
+            let map = $bpf.take_map($name)
+                .ok_or_else(|| $crate::error::VanguardError::EbpfMapError("map take error".to_string()))?;
+            
+            match map {
+                aya::maps::Map::$variant(data) => {
+                    let map_obj = aya::maps::Map::$variant(data);
+                    Ok(<$type>::try_from(map_obj).map_err(|e| $crate::error::VanguardError::EbpfMapError(format!("take map error: {e}")))?)
+                }
+                _ => Err($crate::error::VanguardError::EbpfMapError("try from map error".to_string()).into())
             }
-            _ => Err($crate::error::VanguardError::EbpfMapError("try from map error".to_string()).into())
-        }
-    }};
+        }};
+    }
+
+    #[allow(unused)]
+    pub(crate) use get_map;
 }
 
 #[cfg(feature = "userspace")]

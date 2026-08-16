@@ -27,18 +27,13 @@ pub static BLOCK_EVENT: RingBuf = RingBuf::with_byte_size(256 * 1024, 0);
 #[map]
 pub static BLACKLIST: LpmTrie<EbpfIp, u8> = LpmTrie::with_max_entries(65536, 0);
 #[inline(always)]
-pub fn is_blocked(ip: &EbpfIp, now: u64) -> bool {
+pub fn is_blocked(ip: &EbpfIp) -> bool {
     let key: Key<EbpfIp> = Key {
         prefix_len: 32,
         data: *ip,
     };
 
-    match unsafe { BLACKLIST.get(&key) } {
-        Some(entry) => {
-            now < (*entry).blocked_until
-        }
-        None => false,
-    }
+    BLACKLIST.get(&key).is_some()
 }
 
 #[map]
@@ -66,10 +61,10 @@ pub fn check_limit(ip: &EbpfIp, now_ns: u64, config: &XdpConfig) -> bool {
 
             if now_ns > cnt.last_update {
                 let elapsed_ns = now_ns - cnt.last_update;
-                let generated_tokens = elapsed_ns / config.token_interval_ns;
+                let generated_tokens = elapsed_ns / config.interval;
                 if generated_tokens > 0 {
                     cnt.tokens = core::cmp::min(config.max_tokens, cnt.tokens + generated_tokens);
-                    cnt.last_update += generated_tokens * config.token_interval_ns;
+                    cnt.last_update += generated_tokens * config.interval;
                 }
             } else {
                 cnt.last_update = now_ns;
@@ -86,7 +81,7 @@ pub fn check_limit(ip: &EbpfIp, now_ns: u64, config: &XdpConfig) -> bool {
                 tokens: config.max_tokens.saturating_sub(1),
                 last_update: now_ns,
             };
-            let _ = PACKET_COUNTER.insert(ip, &new_state, 0);
+            let _ = PACKET_COUNTER.insert(ip, new_state, 0);
             true
         }
     }

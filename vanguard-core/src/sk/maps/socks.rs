@@ -16,11 +16,11 @@ unsafe impl crate::common::commons::Pod for SockKey {}
 
 pub struct SockMapMap;
 impl SockMapMap {
-    fn get(bpf: &mut Ebpf) -> Result<SockMap<MapData>, VanguardError> {
+    pub fn get(bpf: &mut Ebpf) -> Result<SockMap<MapData>, VanguardError> {
         get_map!(bpf, "SOCK_MAP", SockMap, SockMap<MapData>)
     }
 
-    fn add(bpf: &mut Ebpf, index: u32, socket: impl AsRawFd) -> Result<(), VanguardError> {
+    pub fn add(bpf: &mut Ebpf, index: u32, socket: impl AsRawFd) -> Result<(), VanguardError> {
         let mut map = Self::get(bpf)?;
         map.set(index, &socket, 0)
             .map_err(|e| VanguardError::EbpfMapError(format!("{e}")))?;
@@ -31,11 +31,11 @@ impl SockMapMap {
 
 pub struct SockHashMap;
 impl SockHashMap {
-    fn get(bpf: &mut Ebpf) -> Result<SockHash<MapData, SockKey>, VanguardError> {
+    pub fn get(bpf: &mut Ebpf) -> Result<SockHash<MapData, SockKey>, VanguardError> {
         get_map!(bpf, "SOCK_HASH", SockHash, SockHash<MapData, SockKey>)
     }
 
-    fn add(bpf: &mut Ebpf, key: SockKey, value: impl AsRawFd) -> Result<(), VanguardError> {
+    pub fn add(bpf: &mut Ebpf, key: SockKey, value: impl AsRawFd) -> Result<(), VanguardError> {
         let mut map = Self::get(bpf)?;
         map.insert(key, value, 0)
             .map_err(|e| VanguardError::EbpfMapError(format!("{e}")))?;

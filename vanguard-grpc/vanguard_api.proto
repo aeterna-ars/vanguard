@@ -6,6 +6,7 @@ import "google/protobuf/empty.proto";
 
 service Vanguard {
   rpc ChangeRateLimit (ChangeRateLimitRequest) returns (google.protobuf.Empty);
+  rpc ChangeBurstLimit (ChangeBurstLimitRequest) returns (google.protobuf.Empty);
   rpc ChangeBlockTime (ChangeBlockTimeRequest) returns (google.protobuf.Empty);
   rpc Block (BlockRequest) returns (google.protobuf.Empty);
   rpc White (WhiteRequest) returns (google.protobuf.Empty);
@@ -15,6 +16,10 @@ service Vanguard {
 }
 
 message ChangeRateLimitRequest {
+  uint32 limit = 1;
+}
+
+message ChangeBurstLimitRequest {
   uint32 limit = 1;
 }
 

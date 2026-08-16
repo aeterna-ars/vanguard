@@ -18,7 +18,7 @@ pub struct XdpGlobalStatsMap;
 
 #[cfg(feature = "userspace")]
 impl XdpGlobalStatsMap {
-    fn get(bpf: &mut Ebpf) -> Result<PerCpuArray<MapData, XdpGlobalStats>, VanguardError> {
+    pub fn get(bpf: &mut Ebpf) -> Result<PerCpuArray<MapData, XdpGlobalStats>, VanguardError> {
         get_map!(bpf, "XDP_STATS", PerCpuArray, PerCpuArray<MapData, XdpGlobalStats>)
     }
 
