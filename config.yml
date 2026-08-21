@@ -5,6 +5,11 @@ general:
     path: /sys/fs/bpf/vanguard
     pin: false
 
+  block_config:
+    base_block_secs: 60,
+    max_block_secs: 604800,
+    rep_cooldown_secs: 1800,
+
   grpc:
     up: true
     addr: "0.0.0.0:8080"
@@ -23,9 +28,7 @@ xdp:
   config:
     rate_limit: 1000
     burst_limit: 1000
-    base_block_time: 1000
-    max_block_time: 1000
-    rep_cooldown_time: 1000
+    default_action: pass
 
   rules:
     - key:
@@ -51,24 +54,77 @@ xdp:
         proto: "udp"
       value:
         action: "redirect"
+        flag: "mutate"
         to:
           ip: "1.1.1.1"
           port: 53
           eth: "ipv4"
           proto: "udp"
 
+tc:
+  config:
+    default_action: "pass"
+
+  rules:
+    - key:
+        direction: "egress"
+        ip: "0.0.0.0"
+        port: 25
+        eth: "ipv4"
+        proto: "tcp"
+      value:
+        action: "drop"
+
+    - key:
+        direction: "ingress"
+        ip: "0.0.0.0"
+        port: 8080
+        eth: "ipv4"
+        proto: "tcp"
+      value:
+        action: "redirect"
+        to_ip: "172.17.0.2"
+
+    - key:
+        direction: "ingress"
+        ip: "0.0.0.0"
+        port: 443
+        eth: "ipv4"
+        proto: "tcp"
+      value:
+        action: "mirror"
+        to_iface: "eth1"
+
 sk:
   config:
+    default_action: "pass"
 
   rules:
     - key:
-
+        remote_ip: "198.51.100.0/24"
+        local_port: 443
+        proto: "tcp"
       value:
-      
+        action: "tune_tcp"
+        congestion_control: "bbr"
+        rto_min_ms: 200
+
+    - key:
+        remote_ip: "127.0.0.1"
+        local_port: 6379
+        proto: "tcp"
+      value:
+        action: "sockmap_track"
+
 msg:
   config:
-
+    default_action: "pass"
+    
   rules:
     - key:
-
+        from_ip: "127.0.0.1"
+        from_port: 0
+        to_ip: "127.0.0.1"
+        to_port: 8080
       value:
+        action: "sk_redirect"

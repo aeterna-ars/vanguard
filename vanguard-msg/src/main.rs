@@ -15,9 +15,9 @@ use vanguard_core::{
     common::{
         consts::*,
         ip::EbpfIp,
-        commons::IpProto
+        commons::IpProto,
+        maps::socks::SockKey,
     },
-    sk::maps::socks::SockKey,
 };
 
 use crate::maps::*;

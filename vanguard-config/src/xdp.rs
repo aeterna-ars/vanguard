@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 use serde::Deserialize;
 use vanguard_core::xdp::maps::{
     config::*,
@@ -14,7 +13,6 @@ pub struct XdpConf {
     #[serde(deserialize_with = "deserialize_config")]
     pub config: XdpConfig,
     
-    #[serde(default)]
     pub rules: Rule,
 }
 

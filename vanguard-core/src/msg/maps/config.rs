@@ -3,24 +3,24 @@ use super::*;
 
 #[repr(C)]
 #[cfg_attr(feature = "userspace", derive(Clone, Copy))]
-pub struct SkConfig {
+pub struct MsgConfig {
     pub block_time: u64,
     pub rate_limit: u32,
     pub block_on_excess: bool,
 }
 #[cfg(feature = "userspace")]
-unsafe impl Pod for SkConfig {}
+unsafe impl Pod for MsgConfig {}
 
 #[cfg(feature = "userspace")]
-pub struct SkConfigMap;
+pub struct MsgConfigMap;
 
 #[cfg(feature = "userspace")]
-impl SkConfigMap {
-    pub fn get(bpf: &mut Ebpf) -> Result<Array<MapData, SkConfig>, VanguardError> {
-        get_map!(bpf, "CONFIG", Array, Array<MapData, SkConfig>)
+impl MsgConfigMap {
+    pub fn get(bpf: &mut Ebpf) -> Result<Array<MapData, MsgConfig>, VanguardError> {
+        get_map!(bpf, "CONFIG", Array, Array<MapData, MsgConfig>)
     }
 
-    pub fn read(bpf: &mut Ebpf) -> Result<SkConfig, VanguardError> {
+    pub fn read(bpf: &mut Ebpf) -> Result<MsgConfig, VanguardError> {
         let map = Self::get(bpf)?;
         let mp = map.get(&0, 0)
             .map_err(|e| VanguardError::EbpfMapError(format!("{e}")))?;
@@ -28,7 +28,7 @@ impl SkConfigMap {
         Ok(mp)
     }
 
-    pub fn write(bpf: &mut Ebpf, config: SkConfig) -> Result<(), VanguardError> {
+    pub fn write(bpf: &mut Ebpf, config: MsgConfig) -> Result<(), VanguardError> {
         let mut map = Self::get(bpf)?;
         map.set(0, config, 0)
             .map_err(|e| VanguardError::EbpfMapError(format!("{e}")))?;

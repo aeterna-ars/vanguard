@@ -1,5 +1,10 @@
 #[cfg(feature = "userspace")]
-use super::*;
+use crate::get_map;
+
+#[cfg(feature = "userspace")]
+use crate::{common::{commons::*, ip::*}, error::VanguardError};
+
+use std::os::fd::AsRawFd;
 
 #[derive(Copy, Clone)]
 #[repr(C)]

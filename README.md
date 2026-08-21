@@ -3,9 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org/)
 
-**Vanguard** is a high-performance, Rust-based XDP (eXpress Data Path) filtering and load-balancing utility. It is designed to operate at the network driver level, providing an ultra-fast, programmable packet processing layer for modern cloud and edge infrastructures.
+**Vanguard** is a high-performance, Rust-based eBPF filtering and load-balancing utility. It is designed to operate at the network driver level, providing an ultra-fast, programmable packet processing layer for modern cloud and edge infrastructures.
 
-Inspired by the architectural principles of Facebook's **Katran** and Cloudflare's **Unimog**, Vanguard aims to bring the power of eBPF and XDP to the Rust ecosystem, offering a memory-safe, highly efficient, and extensible platform for network telemetry, security, and traffic management.
+Inspired by the architectural principles of Facebook's **Katran** and Cloudflare's **Unimog**, Vanguard aims to bring the power of eBPF to the Rust ecosystem, offering a memory-safe, highly efficient, and extensible platform for network telemetry, security, and traffic management.
 
 ## Philosophy
 

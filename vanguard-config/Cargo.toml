@@ -6,5 +6,5 @@ edition.workspace = true
 [dependencies]
 serde = { workspace = true }
 serde_yaml = { workspace = true }
-vanguard-core = { path = "../vanguard-core", default-features = false }
+vanguard-core = { path = "../vanguard-core" }
 erret-result = { workspace = true }

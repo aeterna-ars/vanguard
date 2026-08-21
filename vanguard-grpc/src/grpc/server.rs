@@ -1,7 +1,5 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use tokio::sync::Mutex;
-
 use aya::Ebpf;
 
 use tonic::{transport::Server, Request, Response, Status};
@@ -27,7 +25,7 @@ use vanguard_core::brevno::*;
 use erret_result::*;
 
 struct VanguardService {
-    pub bpf: Arc<Mutex<Ebpf>>,
+    pub bpf: Arc<Ebpf>,
 }
 
 #[tonic::async_trait]
@@ -39,14 +37,30 @@ impl Vanguard for VanguardService {
         let req = request.into_inner();
         info!("Change rate limit request: {}", req.limit);
 
-        let mut bpf = self.bpf.lock().await;
+        let cfg = XdpConfigMap::read(&mut self.bpf)
+            .map_err(|e| Status::internal(format!("read map error: {e}")))?;
+
+        let new = XdpConfig::new(req.limit, cfg.burst_limit);
+
+        XdpConfigMap::write(&mut self.bpf, new)
+            .map_err(|e| Status::internal(format!("write map error: {e}")))?;
+
+        Ok(Response::new(()))
+    }
+
+    async fn change_burst_limit(
+        &self,
+        request: Request<ChangeBurstLimitRequest>,
+    ) -> Result<(), Status> {
+        let req = request.into_inner();
+        info!("Change burst limit request: {}", req);
 
         let cfg = XdpConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
 
         let new = XdpConfig {
-            rate_limit: req.limit,
-            burst_limit: cfg.block_time
+            rate_limit: cfg.rate_limit,
+            block_time: req.time,
         };
 
         XdpConfigMap::write(&mut bpf, new)
@@ -61,8 +75,6 @@ impl Vanguard for VanguardService {
     ) -> Result<Response<()>, Status> {
         let req = request.into_inner();
         info!("Change block time request: {}", req.time);
-
-        let mut bpf = self.bpf.lock().await;
 
         let cfg = XdpConfigMap::read(&mut bpf)
             .map_err(|e| Status::internal(format!("read map error: {e}")))?;
@@ -88,8 +100,6 @@ impl Vanguard for VanguardService {
         let ip = EbpfNet::to_type(req.ip)
             .map_err(|e| Status::invalid_argument(format!("invalid IP: {e}")))?;
 
-        let mut bpf = self.bpf.lock().await;
-
         BlocklistMap::block(&mut bpf, ip)
             .map_err(|e| Status::internal(format!("address block error: {e}")))?;
 
@@ -105,8 +115,6 @@ impl Vanguard for VanguardService {
 
         let ip = EbpfNet::to_type(req.ip)
             .map_err(|e| Status::invalid_argument(format!("invalid IP: {e}")))?;
-
-        let mut bpf = self.bpf.lock().await;
 
         WhitelistMap::insert(&mut bpf, ip)
             .map_err(|e| Status::internal(format!("insert map error: {e}")))?;
@@ -150,8 +158,6 @@ impl Vanguard for VanguardService {
             key.ip, key.port, key.proto, action, redirect_fmt
         );
 
-        let mut bpf = self.bpf.lock().await;
-
         let rule_key = parse_rule_key(key)?;
         
         let rule_value = XdpRuleValue {
@@ -180,8 +186,6 @@ impl Vanguard for VanguardService {
             key.ip, key.port, key.eth, key.proto
         );
 
-        let mut bpf = self.bpf.lock().await;
-
         let rule_key = parse_rule_key(key)?;
         
         RulesMap::remove(&mut bpf, rule_key).map_err(|e| Status::internal(format!("{e}")))?;
@@ -194,8 +198,6 @@ impl Vanguard for VanguardService {
         _request: Request<GetStatsRequest>,
     ) -> Result<Response<GetStatsResponse>, Status> {
         info!("Get stats request");
-
-        let mut bpf = self.bpf.lock().await;
         
         let stats = XdpGlobalStatsMap::get_total(&mut bpf)
             .map_err(|_| Status::internal("ebpf map error"))?;
@@ -221,7 +223,7 @@ fn parse_rule_key(key: RuleKey) -> Result<XdpRuleKey, Status> {
     })
 }
 
-pub async fn start_grpc_server(bpf: Arc<Mutex<Ebpf>>, addr: SocketAddr) -> ErrResult<()> {
+pub async fn init_grpc_server(bpf: Arc<Ebpf>, addr: SocketAddr) -> ErrResult<()> {
     let service = VanguardService {
         bpf,
     };

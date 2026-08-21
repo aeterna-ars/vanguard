@@ -4,7 +4,7 @@ use aya_ebpf::{
 };
 
 use vanguard_core::{
-    sk::maps::socks::SockKey
+    common::maps::socks::SockKey
 };
 
 #[map]

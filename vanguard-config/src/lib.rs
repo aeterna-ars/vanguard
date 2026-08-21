@@ -1,90 +1,31 @@
 pub mod general;
-pub mod sk;
+pub mod skb;
 pub mod msg;
 pub mod xdp;
 
-use std::net::SocketAddr;
-use serde::Deserialize;
-use vanguard_core::xdp::maps::{
-    config::*,
-    rules::*,
-};
-use vanguard_core::common::ip::*;
-use erret_result::*;
+pub mod serialize_common {
+    use serde::{Deserialize, Deserializer, de::Error};
+    use vanguard_core::common::{
+        commons::*,
+        ip::*
+    };
 
-#[derive(Deserialize)]
-pub struct VanguardConfig {
-    #[serde(default = "default_iface")]
-    pub iface: String,
-
-    pub maps: EbpfMaps,
-
-    #[serde(deserialize_with = "deserialize_config")]
-    pub config: XdpConfig,
-
-    #[serde(default)]
-    pub blacklist: Vec<BlockConfig>,
-
-    #[serde(default, deserialize_with = "deserialize_ip_list")]
-    pub whitelist: Vec<EbpfNet>,
-
-    #[serde(default)]
-    pub rules: Vec<Rule>,
-
-    #[serde(default)]
-    pub grpc: GrpcApi,
-}
-
-impl VanguardConfig {
-    pub fn load(path: &str) -> ErrResult<Self> {
-        let content = std::fs::read_to_string(path)?;
-        let cfg: VanguardConfig = serde_yaml::from_str(&content)?;
-        Ok(cfg)
+    pub fn deserialize_ip<'de, D>(deserializer: D) -> Result<EbpfNet, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = Deserialize::deserialize(deserializer)?;
+        EbpfNet::to_type(s).map_err(D::Error::custom)
     }
-}
 
-fn default_iface() -> String { "eth0".to_string() }
-
-#[derive(Deserialize)]
-pub struct EbpfMaps {
-    pub pin: bool,
-
-    #[serde(default = "default_pin_path")]
-    pub path: String,
-}
-
-fn default_pin_path() -> String { "/sys/fs/bpf/vanguard".to_string() }
-
-#[derive(Deserialize)]
-pub struct BlockConfig {
-    #[serde(deserialize_with = "deserialize_ip")]
-    pub ip: EbpfNet,
-
-    #[serde(default)]
-    pub blocked_until: u64,
-}
-
-#[derive(Deserialize)]
-pub struct Rule {
-    #[serde(deserialize_with = "deserialize_rkey")]
-    pub key: XdpRuleKey,
-
-    #[serde(deserialize_with = "deserialize_rval")]
-    pub value: XdpRuleValue,
-}
-
-#[derive(Deserialize)]
-pub struct GrpcApi {
-    pub up: bool,
-    pub addr: SocketAddr,
-}
-
-impl Default for GrpcApi {
-    fn default() -> Self {
-        Self {
-            up: false,
-            addr: "[::1]:8080".parse().unwrap(),
-        }
+    pub fn deserialize_ip_list<'de, D>(deserializer: D) -> Result<Vec<EbpfNet>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let ips: Vec<String> = Deserialize::deserialize(deserializer)?;
+        ips.into_iter()
+            .map(|s| EbpfNet::to_type(s).map_err(D::Error::custom))
+            .collect()
     }
 }
 

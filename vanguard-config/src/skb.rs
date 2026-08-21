@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 use serde::Deserialize;
-use vanguard_core::sk::maps::{
+use vanguard_core::skb::maps::{
     config::*,
 };
 use vanguard_core::common::ip::*;
@@ -9,9 +9,9 @@ use erret_result::*;
 use self::serialize::*;
 
 #[derive(Deserialize)]
-pub struct SkConf {
+pub struct SkbConf {
     #[serde(deserialize_with = "deserialize_config")]
-    pub config: SkConfig,
+    pub config: SkbConfig,
     
     #[serde(default)]
     pub rules: ,

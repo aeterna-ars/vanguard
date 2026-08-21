@@ -1,6 +1,7 @@
 use std::net::SocketAddr;
 use serde::Deserialize;
-use vanguard_core::sk::maps::{
+use vanguard_core::msg::maps::config::MsgConfig;
+use vanguard_core::skb::maps::{
     config::*,
 };
 use vanguard_core::common::ip::*;
@@ -11,7 +12,7 @@ use self::serialize::*;
 #[derive(Deserialize)]
 pub struct MsgConf {
     #[serde(deserialize_with = "deserialize_config")]
-    pub config: ,
+    pub config: MsgConfig,
     
     #[serde(default)]
     pub rules: ,

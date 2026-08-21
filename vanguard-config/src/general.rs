@@ -1,20 +1,20 @@
 use std::net::SocketAddr;
 use serde::Deserialize;
-use vanguard_core::xdp::maps::{
-    config::*,
-    rules::*,
-};
 use vanguard_core::common::ip::*;
 use erret_result::*;
 
-use self::serialize::*;
+use crate::serialize_common::*;
 
 #[derive(Deserialize)]
 pub struct GeneralConf {
     #[serde(default = "default_iface")]
     pub iface: String,
 
+    #[serde(default)]
     pub maps: EbpfMaps,
+
+    #[serde(default)]
+    pub block_config: BlockConfig,
 
     #[serde(default)]
     pub grpc: GrpcApi,
@@ -39,12 +39,17 @@ fn default_iface() -> String { "eth0".to_string() }
 #[derive(Deserialize)]
 pub struct EbpfMaps {
     pub pin: bool,
-
-    #[serde(default = "default_pin_path")]
     pub path: String,
 }
 
-fn default_pin_path() -> String { "/sys/fs/bpf/vanguard".to_string() }
+impl Default for EbpfMaps {
+    fn default() -> Self {
+        Self {
+            pin: false,
+            path: "/sys/fs/bpf/vanguard".to_string(),
+        }
+    }
+}
 
 #[derive(Deserialize)]
 pub struct GrpcApi {
@@ -57,6 +62,23 @@ impl Default for GrpcApi {
         Self {
             up: false,
             addr: "[::1]:8080".parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct BlockConfig {
+    pub base_block_secs: u32,
+    pub max_block_secs: u32,
+    pub rep_cooldown_secs: u32,
+}
+
+impl Default for BlockConfig {
+    fn default() -> Self {
+        Self {
+            base_block_secs: 60,
+            max_block_secs: 604800,
+            rep_cooldown_secs: 1800,
         }
     }
 }

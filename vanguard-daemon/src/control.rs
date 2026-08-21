@@ -28,11 +28,6 @@ use aya::{
     }
 };
 
-const BASE_BLOCK_SECS: u64 = 60;
-const MAX_BLOCK_SECS: u64 = 86400 * 7;
-
-const REPUTATION_COOLDOWN_SECS: u64 = 3600;
-
 struct IpReputation {
     pub violation_count: u32,
     pub is_banned: bool,

@@ -15,7 +15,7 @@ use crate::maps::*;
 
 #[xdp]
 pub fn main(ctx: XdpContext) -> u32 {
-    match try_filter(ctx) {
+    match unsafe { try_filter(ctx) } {
         Ok(ret) => {
             update_stats(ret);
             ret
@@ -28,7 +28,8 @@ pub fn main(ctx: XdpContext) -> u32 {
 }
 
 #[inline(always)]
-fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
+#[allow(unsafe_op_in_unsafe_fn)]
+unsafe fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     let (addr, action) = parse::try_parse_ip(&ctx, 0)?;
 
     if maps::is_white(&addr) {
@@ -36,18 +37,18 @@ fn try_filter(ctx: XdpContext) -> Result<u32, u32> {
     }
     
     let xdp_config = if let Some(ptr) = CONFIG.get_ptr(0) {
-        unsafe { &*ptr }
+        &*ptr
     } else {
         return Err(xdp_action::XDP_PASS);
     };
 
-    let now = unsafe { bpf_ktime_get_coarse_ns() };
+    let now = bpf_ktime_get_coarse_ns();
 
     if maps::is_blocked(&addr) {
         return Err(xdp_action::XDP_DROP);
     } else if !maps::check_limit(&addr, now, xdp_config) {
         if let Some(mut buf) = maps::BLOCK_EVENT.reserve::<BlockEvent>(0) {
-            let event = unsafe { &mut *buf.as_mut_ptr() };
+            let event = &mut *buf.as_mut_ptr();
             event.ip = EbpfNet { ip: addr, prefix_len: 32 };
             buf.submit(0);
         }

@@ -11,7 +11,7 @@ fi
 
 echo "Building using . ..."
 
-echo "Building eBPF (vanguard-xdp)..."
+echo "Building eBPF (vanguard-xdp, vanguard-skb, vanguard-msg)..."
 (cd vanguard-xdp && cargo build --release)
 
 echo "Building userspace (CLI, gRPC, Daemon)..."
