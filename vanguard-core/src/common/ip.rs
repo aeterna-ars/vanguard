@@ -6,6 +6,7 @@ use crate::error::VanguardError;
 
 use std::net::*;
 use std::str::FromStr;
+use std::net::Ipv6Addr;
 
 #[repr(C, align(4))]
 #[derive(Clone, Copy)]
@@ -75,8 +76,6 @@ pub struct EbpfNet {
 }
 #[cfg(feature = "userspace")]
 unsafe impl Pod for EbpfNet {}
-
-use std::net::Ipv6Addr;
 
 #[cfg(feature = "userspace")]
 impl Parse for EbpfNet {

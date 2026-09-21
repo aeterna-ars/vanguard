@@ -14,15 +14,17 @@ general:
     up: true
     addr: "0.0.0.0:8080"
 
-  blacklist:
-    - ip: "1.2.3.4"
-      blocked_until: 1234567890
-    - ip: "5.6.7.8"
-
-  whitelist:
-    - "192.168.1.1"
-    - "10.0.0.0/24"
-    - "::1"
+  accesslist:
+    - addr: "1.2.3.4:4321"
+      is_block: true
+      until: 1234567890
+    - addr: "5.6.7.8:1234"
+      is_block: true
+    - addr: "192.168.1.1:1234"
+      is_block: false
+      until: 1234567890
+    - addr: "10.0.0.0:8080 /24"
+      is_block: false
 
 xdp:
   config:
@@ -32,23 +34,24 @@ xdp:
     default_action: "pass"
 
   rules:
-    - key: { ip: "5.6.7.8", port: 80, eth: "ipv4", proto: "tcp" }
+    - key: { addr: "5.6.7.8:80", eth: "ipv4", proto: "tcp" }
       value: { action: "drop" }
 
-    - key: { ip: "2001:db8::1", port: 443, eth: "ipv6", proto: "udp" }
+    - key: { addr: "[2001:db8::1]:443", eth: "ipv6", proto: "udp" }
       value: { action: "pass" }
     
-    - key: { ip: "0.0.0.0", port: 53, eth: "ipv4", proto: "tcp" }
+    - key: { addr: "0.0.0.0:53", eth: "ipv4", proto: "tcp" }
       value:
         action: "tx"
         flag: 
-        encap: true
+        encap: "ip-in-ip"
+        algo: "hash"
         to:
-          - { ip: "1.1.1.1", port: 53 }
-          - { ip: "8.8.8.8", port: 53 }
-          - { ip: "77.88.8.8", port: 53 }
+          - { addr: "1.1.1.1:443" }
+          - { addr: "8.8.8.8:80" }
+          - { addr: "77.88.8.8:8080" }
 
-    - key: { ip: "1.1.1.1", port: 8000, eth: "ipv4", proto: "udp" }
+    - key: { addr:: "1.1.1.1:8000", eth: "ipv4", proto: "udp" }
       value:
         action: "redirect"
         to_iface: "docker"
@@ -59,52 +62,17 @@ tc:
     default_action: "pass"
 
   rules:
-    - key: { direction: "egress", ip: "0.0.0.0", port: 25, eth: "ipv4", proto: "tcp" }
-      value: { action: "drop", track: false }
+    - key: { direction: "egress", addr: "0.0.0.0:25", eth: "ipv4", proto: "tcp" }
+      value: { action: "drop" }
 
-    - key: { direction: "ingress", ip: "0.0.0.0", port: 443, eth: "ipv4", proto: "tcp" }
-      value: { action: "mirror", to_iface: "eth1", track: false }
+    - key: { direction: "ingress", addr: "0.0.0.0:443", eth: "ipv4", proto: "tcp" }
+      value: { action: "mirror", to_iface: "eth1" }
 
-    - key: { direction: "ingress", ip: "0.0.0.0", port: 8080, eth: "ipv4", proto: "tcp" }
+    - key: { direction: "ingress", addr: "0.0.0.0:8080", eth: "ipv4", proto: "tcp" }
       value:
         action: "redirect"
-        track: true
         algo: "round_robin"
         to:
-          - { ip: "172.17.0.2", port: 8080 }
-          - { ip: "172.17.0.3", port: 8080 }
-          - { ip: "172.17.0.4", port: 8080 }
-
-sk:
-  config:
-    enable: true
-    default_action: "pass"
-
-  rules:
-    - key: { remote_ip: "198.51.100.0/24", local_port: 443, proto: "tcp" }
-      value: { action: "tune_tcp", congestion_control: "bbr", rto_min_ms: 200 }
-
-    - key: { remote_ip: "127.0.0.1", local_port: 6379, proto: "tcp" }
-      value:
-        action: "sock_balance"
-        track: true
-        algo: "hash"
-        to:
-          - { ip: "127.0.0.1", port: 6379 }
-          - { ip: "127.0.0.1", port: 6380 }
-          - { ip: "127.0.0.1", port: 6381 }
-
-msg:
-  config:
-    enable: true
-    default_action: "pass"
-    
-  rules:
-    - key: { from_ip: "127.0.0.1", from_port: 0, to_ip: "127.0.0.1", to_port: 8080 }
-      value:
-        action: "sk_balance_msg"
-        track: true
-        algo: "random"
-        to:
-          - { ip: "127.0.0.1", port: 9001 }
-          - { ip: "127.0.0.1", port: 9002 }
+          - { addr: "172.17.0.2:8080" }
+          - { addr: "172.17.0.3:8080" }
+          - { addr: "172.17.0.4:8080" }

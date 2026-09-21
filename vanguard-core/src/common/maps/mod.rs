@@ -1,8 +1,5 @@
-pub mod blacklist;
-pub mod whitelist;
-pub mod socks;
-pub mod conntrack;
-pub mod maglev;
+pub mod accesslist;
+pub mod backend;
 
 #[cfg(feature = "userspace")]
 use crate::error::VanguardError;

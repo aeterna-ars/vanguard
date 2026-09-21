@@ -37,12 +37,6 @@ unsafe fn try_filter(ctx: XdpContext) -> Result<EbpfAction, EbpfAction> {
     if maps::is_white(&addr) {
         return Ok(action)
     }
-    
-    let xdp_config = if let Some(ptr) = CONFIG.get_ptr(0) {
-        &*ptr
-    } else {
-        return Err(EbpfAction::PASS);
-    };
 
     let now = bpf_ktime_get_coarse_ns();
 

@@ -3,29 +3,29 @@ use super::*;
 
 #[repr(C, align(8))]
 #[derive(Clone, Copy)]
-pub struct XdpRuleKey{ pub inner: Tuple5 }
+pub struct XdpRuleKey { pub tuple: Tuple5 }
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpRuleKey {}
 
 #[repr(C, align(8))]
 #[derive(Clone, Copy)]
 pub enum XdpRuleValue {
-    Drop,
-    Pass,
+    Mirror,
     Tx {
-        backends: [u32; 16],
         encap: bool,
+        to: Tuple5,
     },
     Redirect {
         target_ifindex: u32,
-        target_mac: [u8; 6],
     },
 }
 #[cfg(feature = "userspace")]
 unsafe impl Pod for XdpRuleValue {}
 
 #[cfg(feature = "userspace")]
-pub struct XdpRulesMap;
+pub struct XdpRulesMap {
+    map: HashMap<MapData, XdpRuleKey, XdpRuleValue>
+}
 
 #[cfg(feature = "userspace")]
 impl XdpRulesMap {

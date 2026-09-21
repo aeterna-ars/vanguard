@@ -10,7 +10,7 @@ use vanguard_core::{
     common::{
         commons::Parse,
         ip::*,
-        maps::blacklist::BlocklistMap,
+        maps::accesslist::BlocklistMap,
     },
     brevno::*,
 };

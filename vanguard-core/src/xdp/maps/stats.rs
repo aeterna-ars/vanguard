@@ -1,10 +1,9 @@
 #[cfg(feature = "userspace")]
 use super::*;
 
-#[repr(C)]
-#[cfg_attr(feature = "userspace", derive(Clone, Copy))]
+#[repr(C, align(8))]
+#[derive(Clone, Copy)]
 pub struct XdpGlobalStats {
-    pub total: u64,
     pub dropped: u64,
     pub passed: u64,
     pub tx: u64,
@@ -14,7 +13,7 @@ pub struct XdpGlobalStats {
 unsafe impl Pod for XdpGlobalStats {}
 
 #[cfg(feature = "userspace")]
-pub struct XdpGlobalStatsMap;
+pub struct XdpGlobalStatsMap { pub map: PerCpuArray<MapData, XdpGlobalStats> }
 
 #[cfg(feature = "userspace")]
 impl XdpGlobalStatsMap {
@@ -30,7 +29,6 @@ impl XdpGlobalStatsMap {
             .map_err(|e| VanguardError::EbpfMapError(format!("{e}")))?;
 
         let mut total_stats = XdpGlobalStats {
-            total: 0,
             dropped: 0,
             passed: 0,
             tx: 0,
@@ -38,7 +36,6 @@ impl XdpGlobalStatsMap {
         };
 
         for cpu_stat in per_cpu_values.iter() {
-            total_stats.total += cpu_stat.total;
             total_stats.dropped += cpu_stat.dropped;
             total_stats.passed += cpu_stat.passed;
             total_stats.tx += cpu_stat.tx;

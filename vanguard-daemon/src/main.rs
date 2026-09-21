@@ -1,4 +1,4 @@
-mod control;
+mod blockctl;
 
 use std::sync::Arc;
 
@@ -20,7 +20,7 @@ use libsystemd::daemon::{self, *};
 
 use vanguard_core::{
     common::maps::{
-        blacklist::*,
+        accesslist::*,
         whitelist::*,
     },
     error::*,
@@ -31,6 +31,7 @@ use vanguard_grpc::server::*;
 use vanguard_config::*;
 use erret_result::*;
 
+// wtf
 struct XdpDaemon {
     bpf: Arc<Mutex<Ebpf>>,
     link_id: XdpLinkId,

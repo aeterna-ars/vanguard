@@ -1,6 +1,4 @@
 pub mod general;
-pub mod skb;
-pub mod msg;
 pub mod xdp;
 
 pub mod serialize_common {

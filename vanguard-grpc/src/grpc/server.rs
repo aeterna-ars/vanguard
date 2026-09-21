@@ -16,7 +16,7 @@ use vanguard_core::{
         commons::{Parse, IpProto, EtherType},
         ip::*,
         maps::{
-            blacklist::*,
+            accesslist::*,
             whitelist::*,
         }
     }
